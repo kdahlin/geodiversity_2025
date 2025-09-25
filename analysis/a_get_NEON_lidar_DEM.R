@@ -19,7 +19,7 @@ library(neonUtilities)
 # -----------------------------------
 
 # set working directory to save things to
-setwd("C:/Users/Kyla Dahlin/Dropbox/MSU_GEO871/data/")
+save.directory <- 
 
 # Define the path to external (not in rproj) data storage 
 # (HPCC or whatever your data is located)
