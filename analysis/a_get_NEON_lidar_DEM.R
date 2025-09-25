@@ -19,7 +19,7 @@ library(neonUtilities)
 # -----------------------------------
 
 # set working directory to save things to
-save.directory <- 
+save.directory <- "./NEON_data/"
 
 # Define the path to external (not in rproj) data storage 
 # (HPCC or whatever your data is located)
@@ -29,6 +29,9 @@ root <- "X:/"
 site <- "ORNL" 
 year <- "2018"  
 siteyear <- paste0(site, "/", year, "/")
+
+# make a directory for the data you eventually download
+dir.create(paste0(save.directory, site))
 
 # define EPSG code of your spatial data UTM zone (change for new location!)
 epsg <- 32616
