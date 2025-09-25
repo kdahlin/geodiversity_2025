@@ -15,13 +15,14 @@ library(terra)
 library(neonUtilities)
 
 # -----------------------------------
-# USER-DEFINED VARIABLES
+# USER-DEFINED VARIABLES (note there are other hard coded things too, so don't 
+# run this without checking! especially at step 5 and beyond)
 # -----------------------------------
 
 # today's date
 date <- "20250925"
 
-# directory to save "raw" neon data to
+# directory to save "raw" neon data to (working in github)
 save.directory <- "./NEON_data/"
 
 # Site Code and Year
@@ -46,7 +47,7 @@ names(centroid) <- c("lat", "lon")
 
 centroid.pt <- st_as_sf(centroid, coords = c("lon", "lat"))
 
-st_crs(centroid.pt) <- 4326
+st_crs(centroid.pt) <- 4326 # this is the GEE epsg
 
 #-------------
 # RUN LIST AOP TILES FUNCTION
@@ -273,8 +274,8 @@ ggdraw(tiles_map2) +
 # Step 5: Take a look in GEE to pick the 4 points you want
 #------
 
-st_write(tile_points2, paste0(save.directory,"ORNL_9points.kml"), 
-         driver = "KML", delete_dsn = TRUE)
+st_write(tile_points2, paste0(save.directory, "/", site,  "_9points.kml"), 
+         driver = "KML")
 # open in GEE
 
 # select which coordinates you want to keep (remember you only want the lower
@@ -286,8 +287,8 @@ tile_coords <- tile_coords_new[c(1,2,4,5), ]
 #------
 for (i in 1:nrow(tile_coords)) {
   neonUtilities::byTileAOP(dpID = "DP3.30024.001",
-                         site = "ORNL",
-                         year = 2018,
+                         site = site,
+                         year = year,
                          easting = tile_coords$easting[i],
                          northing = tile_coords$northing[i],
                          check.size = FALSE,
@@ -320,6 +321,9 @@ out.mosaic.name <- paste0("./processed_tifs/",
 writeRaster(mosaic.dem, out.mosaic.name,
             overwrite = FALSE)
 
+# -----
+# all done!
+# -----
 
 
 
