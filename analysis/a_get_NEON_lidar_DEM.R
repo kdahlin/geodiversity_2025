@@ -18,12 +18,11 @@ library(neonUtilities)
 # USER-DEFINED VARIABLES
 # -----------------------------------
 
-# set working directory to save things to
-save.directory <- "./NEON_data/"
+# today's date
+date <- "20250925"
 
-# Define the path to external (not in rproj) data storage 
-# (HPCC or whatever your data is located)
-root <- "X:/" 
+# directory to save "raw" neon data to
+save.directory <- "./NEON_data/"
 
 # Site Code and Year
 site <- "ORNL" 
@@ -32,6 +31,7 @@ siteyear <- paste0(site, "/", year, "/")
 
 # make a directory for the data you eventually download
 dir.create(paste0(save.directory, site))
+save.directory <- paste0(save.directory, site, "/")
 
 # define EPSG code of your spatial data UTM zone (change for new location!)
 epsg <- 32616
@@ -125,7 +125,7 @@ list_AOP_Tiles <- function(coords, input_crs = 4326) {
 
 
 #-------------
-# STEP 2: generate UTM coordinates, ESPG code, and NEON tile coordinates
+# STEP 1: generate UTM coordinates, ESPG code, and NEON tile coordinates
 #-------------
 
 # project data into target UTM Zone 
@@ -140,7 +140,7 @@ raw_coords_df <- as.data.frame(st_coordinates(centroid.rpj))
 UTM_coords_df <- list_AOP_Tiles(raw_coords_df, input_crs = epsg) 
 
 #---------------
-# Step 3: get tiles
+# Step 2: get tiles
 #---------------
 
 # Set buffer to determine how many adjoining tiles to add around the sampled
@@ -161,7 +161,7 @@ tile_points <- st_as_sf(tile_coords,
                         crs = epsg) 
 
 #-------
-# Step 4: plot your points!
+# Step 3: plot your points!
 #-------
 
 # load basemap 
@@ -195,7 +195,7 @@ inset <- ggplot(data = states_utm) +
   geom_sf(fill = "lightblue") +
   geom_sf(data = states_utm, fill = "grey")+
   geom_sf(data = bbox, fill = "red")+
-  coord_sf(xlim = c(eastrefmin, eastrefmax), ylim = c(northrefmin, northrefmax), crs = 32617) +
+  coord_sf(xlim = c(eastrefmin, eastrefmax), ylim = c(northrefmin, northrefmax), crs = epsg) +
   theme(axis.text.x = element_blank(),
         axis.ticks.x = element_blank(),
         axis.text.y = element_blank(),
@@ -214,7 +214,7 @@ ggdraw(tiles_map) +
   draw_plot(inset, width = 0.3, height = 0.3, x = 0.15, y = 0.05)
 
 #------
-# Step 3 (Optional): Select adjoining tiles 
+# Step 4 (Optional): Select adjoining tiles 
 #------
 # run function
 adjoin_neon_tiles <- function(coords, kmbuffer = 1) {
@@ -270,10 +270,11 @@ ggdraw(tiles_map2) +
   draw_plot(inset, width = 0.3, height = 0.3, x = 0.15, y = 0.05)
 
 #------
-# Step 4: Take a look in GEE to pick the 4 points you want
+# Step 5: Take a look in GEE to pick the 4 points you want
 #------
 
-st_write(tile_points2, "ORNL_9points.kml", driver = "KML", delete_dsn = TRUE)
+st_write(tile_points2, paste0(save.directory,"ORNL_9points.kml"), 
+         driver = "KML", delete_dsn = TRUE)
 # open in GEE
 
 # select which coordinates you want to keep (remember you only want the lower
@@ -281,7 +282,7 @@ st_write(tile_points2, "ORNL_9points.kml", driver = "KML", delete_dsn = TRUE)
 tile_coords <- tile_coords_new[c(1,2,4,5), ]
 
 #------
-# Step 5: Get data from NEON!
+# Step 6: Get data from NEON!
 #------
 for (i in 1:nrow(tile_coords)) {
   neonUtilities::byTileAOP(dpID = "DP3.30024.001",
@@ -289,8 +290,39 @@ for (i in 1:nrow(tile_coords)) {
                          year = 2018,
                          easting = tile_coords$easting[i],
                          northing = tile_coords$northing[i],
-                         check.size = FALSE)
+                         check.size = FALSE,
+                         savepath = save.directory)
   print(i)
 }
+
+# -----
+# Step 7: Mosaic AOP tiles!
+# -----
+
+NEON.path <- paste0("./NEON_data/ORNL/DP3.30024.001/neon-aop-products/2018/",
+                    "FullSite/D07/2018_ORNL_4/L3/DiscreteLidar/DTMGtif/")
+
+dem.files <- list.files(NEON.path)
+
+tile1 <- rast(paste0(NEON.path, dem.files[1]))
+tile2 <- rast(paste0(NEON.path, dem.files[2]))
+tile3 <- rast(paste0(NEON.path, dem.files[3]))
+tile4 <- rast(paste0(NEON.path, dem.files[4]))
+
+mosaic.dem <- mosaic(tile1, tile2, tile3, tile4)
+
+plot(mosaic.dem) # so pretty!
+
+out.mosaic.name <- paste0("./processed_tifs/",
+                          site, "_", year, "_DEM_mosaic_",
+                          date, ".tif")
+
+writeRaster(mosaic.dem, out.mosaic.name,
+            overwrite = FALSE)
+
+
+
+
+
 
 
