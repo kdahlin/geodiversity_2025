@@ -11,10 +11,15 @@ library(rnaturalearth)
 library(rnaturalearthdata)
 library(maps)
 library(cowplot)
+library(terra)
+library(neonUtilities)
 
 # -----------------------------------
 # USER-DEFINED VARIABLES
 # -----------------------------------
+
+# set working directory to save things to
+setwd("C:/Users/Kyla Dahlin/Dropbox/MSU_GEO871/data/")
 
 # Define the path to external (not in rproj) data storage 
 # (HPCC or whatever your data is located)
@@ -261,6 +266,28 @@ tiles_map2 <- ggplot(data = states_utm) +
 ggdraw(tiles_map2) +
   draw_plot(inset, width = 0.3, height = 0.3, x = 0.15, y = 0.05)
 
-# if you are happy with your final coordinates, overwrite so you can save below
-tile_coords <- tile_coords_new
+#------
+# Step 4: Take a look in GEE to pick the 4 points you want
+#------
+
+st_write(tile_points2, "ORNL_9points.kml", driver = "KML", delete_dsn = TRUE)
+# open in GEE
+
+# select which coordinates you want to keep (remember you only want the lower
+# left corner of each tile)
+tile_coords <- tile_coords_new[c(1,2,4,5), ]
+
+#------
+# Step 5: Get data from NEON!
+#------
+for (i in 1:nrow(tile_coords)) {
+  neonUtilities::byTileAOP(dpID = "DP3.30024.001",
+                         site = "ORNL",
+                         year = 2018,
+                         easting = tile_coords$easting[i],
+                         northing = tile_coords$northing[i],
+                         check.size = FALSE)
+  print(i)
+}
+
 
