@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document id="root_doc">
+<Folder><name>ORNL_9points</name>
+  <Placemark id="ORNL_9points.1">
+      <Point><coordinates>-84.3503678379212,35.9441577451802</coordinates></Point>
+  </Placemark>
+  <Placemark id="ORNL_9points.2">
+      <Point><coordinates>-84.339292226693,35.9439125764425</coordinates></Point>
+  </Placemark>
+  <Placemark id="ORNL_9points.3">
+      <Point><coordinates>-84.3282167495287,35.9436663872056</coordinates></Point>
+  </Placemark>
+  <Placemark id="ORNL_9points.4">
+      <Point><coordinates>-84.3500668995397,35.9531640986758</coordinates></Point>
+  </Placemark>
+  <Placemark id="ORNL_9points.5">
+      <Point><coordinates>-84.3389900339843,35.9529188493265</coordinates></Point>
+  </Placemark>
+  <Placemark id="ORNL_9points.6">
+      <Point><coordinates>-84.3279133025531,35.9526725791427</coordinates></Point>
+  </Placemark>
+  <Placemark id="ORNL_9points.7">
+      <Point><coordinates>-84.3497658275896,35.9621704364437</coordinates></Point>
+  </Placemark>
+  <Placemark id="ORNL_9points.8">
+      <Point><coordinates>-84.3386877071514,35.9619251064647</coordinates></Point>
+  </Placemark>
+  <Placemark id="ORNL_9points.9">
+      <Point><coordinates>-84.3276097208979,35.9616787553162</coordinates></Point>
+  </Placemark>
+</Folder>
+</Document></kml>
