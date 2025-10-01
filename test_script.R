@@ -15,3 +15,12 @@ print((((((((("Hello World"))))))))) # Check rainbow parentheses
 # this is for funnsies!
 
 # using version control?? 
+
+#testing https pushhhh - LEO 
+
+#copy/paste run this if you haven't gotten HTTPS push to work yet:
+#usethis::create_github_token()
+
+#once you get the token, run this and paste it in
+#gitcreds::gitcreds_set()
+
