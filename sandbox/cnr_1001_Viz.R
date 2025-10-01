@@ -19,3 +19,4 @@ slope <- terrain(r1, v = "slope")
 plot(slope)
 
 ##geodiv exploration 
+
