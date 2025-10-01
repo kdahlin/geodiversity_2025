@@ -28,3 +28,7 @@ roughness
 #Surface bearing index
 surfacebearing <- sbi(r1)
 surfacebearing
+
+#texture direction metrics
+texturedirection <- std(r1, create_plot = FALSE, option=1)
+texturedirection
