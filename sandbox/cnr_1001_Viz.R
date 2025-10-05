@@ -329,18 +329,18 @@ for (i in 1:nrow(tile_coords)) {
 # Step 7: Mosaic AOP tiles!
 # -----
 
-file.exists("C:/Users/courtney/Documents/GitHub/geodiversity_2025/NEON_data/CPER/DP3.30024.001/neon-aop-products/2020/",
-            "FullSite/D10/2020_CPER_7/L3/DiscreteLidar/DTMGtif/")
+file.exists("C:/Users/courtney/Documents/GitHub/geodiversity_2025/NEON_data/WOOD/DP3.30024.001/neon-aop-products/2019/",
+            "FullSite/D09/2019_WOOD_3/L3/DiscreteLidar/DTMGtif/")
 
-NEON.path <- paste0("C:/Users/courtney/Documents/GitHub/geodiversity_2025/NEON_data/CPER/DP3.30024.001/neon-aop-products/2020/",
-                    "FullSite/D10/2020_CPER_7/L3/DiscreteLidar/DTMGtif/")
+NEON.path <- paste0("C:/Users/courtney/Documents/GitHub/geodiversity_2025/NEON_data/WOOD/DP3.30024.001/neon-aop-products/2019/",
+                    "FullSite/D09/2019_WOOD_3/L3/DiscreteLidar/DTMGtif/")
 
 dem.files <- list.files(NEON.path)
 
 tile1 <- rast(paste0(NEON.path, dem.files[1]))
 tile2 <- rast(paste0(NEON.path, dem.files[2]))
-tile3 <- rast(paste0(NEON.path, dem.files[3]))
-tile4 <- rast(paste0(NEON.path, dem.files[4]))
+tile3 <- rast(paste0(NEON.path, dem.files[4]))
+tile4 <- rast(paste0(NEON.path, dem.files[5]))
 
 mosaic.dem <- mosaic(tile1, tile2, tile3, tile4)
 
