@@ -55,8 +55,8 @@ date <- "20251005"
 save.directory <- "C:/Users/courtney/Documents/GitHub/geodiversity_2025/NEON_data/"
 
 # Site Code and Year
-site <- "WOOD" 
-year <- "2019"  
+site <- "RMNP" 
+year <- "2020"  
 siteyear <- paste0(site, "/", year, "/")
 
 # make a directory for the data you eventually download
@@ -64,11 +64,11 @@ dir.create(paste0(save.directory, site))
 save.directory <- paste0(save.directory, site, "/")
 
 # define EPSG code of your spatial data UTM zone (change for new location!)
-epsg <- 32614
+epsg <- 32613
 
 # what is the approx centroid of where you want data from (in lat/lon)
-lon <- -99.11388
-lat <- 47.12984
+lon <- -105.54596
+lat <- 40.27590
 
 # turn that lat/lon into a sf object for R (with lat/lon epsg)
 centroid <- as.data.frame(matrix(data = c(lat, lon), nrow = 1, ncol = 2))
@@ -309,7 +309,7 @@ st_write(tile_points2, paste0(save.directory, "/", site,  "_9points.shp"),
 
 # select which coordinates you want to keep (remember you only want the lower
 # left corner of each tile)
-tile_coords <- tile_coords_new[c(2,3,5,6), ]
+tile_coords <- tile_coords_new[c(1,2,4,5), ]
 
 #------
 # Step 6: Get data from NEON!
@@ -329,8 +329,8 @@ for (i in 1:nrow(tile_coords)) {
 # Step 7: Mosaic AOP tiles!
 # -----
 
-NEON.path <- paste0("./NEON_data/WOOD/DP3.30024.001/neon-aop-products/2019/",
-                    "FullSite/D09/2019_WOOD_3/L3/DiscreteLidar/DTMGtif/")
+NEON.path <- paste0("./NEON_data/RMNP/DP3.30024.001/neon-aop-products/2020/",
+                    "FullSite/D09/2020_RMNP_3/L3/DiscreteLidar/DTMGtif/")
 
 dem.files <- list.files(NEON.path)
 
