@@ -1,0 +1,11 @@
+@misc{https://doi.org/10.48443/yra6-vw36,
+  doi = {10.48443/YRA6-VW36},
+  url = {https://data.neonscience.org/data-products/DP3.30024.001/RELEASE-2025},
+  author = {{National Ecological Observatory Network (NEON)}},
+  keywords = {airborne, aerial, remote sensing, 3D, elevation, bare earth, digital elevation model (DEM), digital terrain model (DTM), light detection and ranging (LiDAR), digital surface model (DSM)},
+  language = {en},
+  title = {Elevation - LiDAR (DP3.30024.001)},
+  publisher = {National Ecological Observatory Network (NEON)},
+  year = {2025}
+}
+
