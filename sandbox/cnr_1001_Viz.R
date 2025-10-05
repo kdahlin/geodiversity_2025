@@ -18,5 +18,9 @@ plot(aspect)
 slope <- terrain(r1, v = "slope")
 plot(slope)
 
+<<<<<<< Updated upstream
 ##geodiv exploration 
 
+=======
+##geodiv exploration
+>>>>>>> Stashed changes
