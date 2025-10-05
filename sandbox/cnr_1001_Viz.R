@@ -3,7 +3,7 @@ library(terra)
 library(sf)
 library(geodiv)
 
-#get path to mosaic data
+#get path to mosaic ORNL, STRIPEY
 
 mosaic.dem <- "C:\\Users\\courtney\\Documents\\GitHub\\geodiversity_2025\\processed_tifs\\ORNL_2018_DEM_mosaic_20250925.tif"
 r1 <- rast(mosaic.dem)
@@ -15,8 +15,44 @@ plot(metrics)
 aspect <- terrain(r1, v = "aspect")
 plot(aspect)
 
-slope <- terrain(r1, v = "slope")
-plot(slope)
+#get path to mosaic WOOD, LUMPY
+
+mosaic.dem <- "C:\\Users\\courtney\\Documents\\GitHub\\geodiversity_2025\\processed_tifs\\WOOD_2020_DEM_mosaic_20251005.tif"
+r1 <- rast(mosaic.dem)
+plot(r1)
+
+metrics <- terrain(r1)
+plot(metrics)
+
+aspect <- terrain(r1, v = "aspect")
+plot(aspect)
+
+#get path to mosaic RMNP, HIGH RELIEF
+
+mosaic.dem <- "C:\\Users\\courtney\\Documents\\GitHub\\geodiversity_2025\\processed_tifs\\RMNP_2020_DEM_mosaic_20251005.tif"
+r1 <- rast(mosaic.dem)
+plot(r1)
+
+metrics <- terrain(r1)
+plot(metrics)
+
+aspect <- terrain(r1, v = "aspect")
+plot(aspect)
+
+#get path to mosaic CPER, FLAT
+
+mosaic.dem <- "C:\\Users\\courtney\\Documents\\GitHub\\geodiversity_2025\\processed_tifs\\CPER_2020_DEM_mosaic_20251005.tif"
+r1 <- rast(mosaic.dem)
+plot(r1)
+
+metrics <- terrain(r1)
+plot(metrics)
+
+aspect <- terrain(r1, v = "aspect")
+plot(aspect)
+
+
+
 
 
 ## Get NEON data
@@ -55,7 +91,7 @@ date <- "20251005"
 save.directory <- "C:/Users/courtney/Documents/GitHub/geodiversity_2025/NEON_data/"
 
 # Site Code and Year
-site <- "CPER" 
+site <- "RMNP" 
 year <- "2020"  
 siteyear <- paste0(site, "/", year, "/")
 
@@ -67,8 +103,8 @@ save.directory <- paste0(save.directory, site, "/")
 epsg <- 32613
 
 # what is the approx centroid of where you want data from (in lat/lon)
-lon <- -104.74559
-lat <- 40.81554
+lon <- -105.54596
+lat <- 40.27590
 
 # turn that lat/lon into a sf object for R (with lat/lon epsg)
 centroid <- as.data.frame(matrix(data = c(lat, lon), nrow = 1, ncol = 2))
@@ -309,7 +345,7 @@ st_write(tile_points2, paste0(save.directory, "/", site,  "_9points.shp"),
 
 # select which coordinates you want to keep (remember you only want the lower
 # left corner of each tile)
-tile_coords <- tile_coords_new[c(1,2,4,5), ]
+tile_coords <- tile_coords_new[c(2,3,5,6), ]
 
 #------
 # Step 6: Get data from NEON!
@@ -329,29 +365,29 @@ for (i in 1:nrow(tile_coords)) {
 # Step 7: Mosaic AOP tiles!
 # -----
 
-file.exists("C:/Users/courtney/Documents/GitHub/geodiversity_2025/NEON_data/WOOD/DP3.30024.001/neon-aop-products/2019/",
-            "FullSite/D09/2019_WOOD_3/L3/DiscreteLidar/DTMGtif/")
+file.exists("C:/Users/courtney/Documents/GitHub/geodiversity_2025/NEON_data/RMNP/DP3.30024.001/neon-aop-products/2020/",
+            "FullSite/D10/2020_RMNP_3/L3/DiscreteLidar/DTMGtif/")
 
-NEON.path <- paste0("C:/Users/courtney/Documents/GitHub/geodiversity_2025/NEON_data/WOOD/DP3.30024.001/neon-aop-products/2019/",
-                    "FullSite/D09/2019_WOOD_3/L3/DiscreteLidar/DTMGtif/")
+NEON.path <- paste0("C:/Users/courtney/Documents/GitHub/geodiversity_2025/NEON_data/RMNP/DP3.30024.001/neon-aop-products/2020/",
+                    "FullSite/D10/2020_RMNP_3/L3/DiscreteLidar/DTMGtif/")
 
 dem.files <- list.files(NEON.path)
 
-tile1 <- rast(paste0(NEON.path, dem.files[1]))
-tile2 <- rast(paste0(NEON.path, dem.files[2]))
-tile3 <- rast(paste0(NEON.path, dem.files[4]))
-tile4 <- rast(paste0(NEON.path, dem.files[5]))
+tile1 <- rast(paste0(NEON.path, dem.files[2]))
+tile2 <- rast(paste0(NEON.path, dem.files[3]))
+tile3 <- rast(paste0(NEON.path, dem.files[5]))
+tile4 <- rast(paste0(NEON.path, dem.files[6]))
 
 mosaic.dem <- mosaic(tile1, tile2, tile3, tile4)
 
 plot(mosaic.dem) # so pretty!
 
-out.mosaic.name <- paste0("./processed_tifs/",
+out.mosaic.name <- paste0("C:/Users/courtney/Documents/GitHub/geodiversity_2025/processed_tifs/",
                           site, "_", year, "_DEM_mosaic_",
                           date, ".tif")
 
 writeRaster(mosaic.dem, out.mosaic.name,
-            overwrite = FALSE)
+            overwrite = TRUE)
 
 # -----
 # all done!
