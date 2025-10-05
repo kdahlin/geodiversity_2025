@@ -55,7 +55,7 @@ date <- "20251005"
 save.directory <- "C:/Users/courtney/Documents/GitHub/geodiversity_2025/NEON_data/"
 
 # Site Code and Year
-site <- "RMNP" 
+site <- "CPER" 
 year <- "2020"  
 siteyear <- paste0(site, "/", year, "/")
 
@@ -67,8 +67,8 @@ save.directory <- paste0(save.directory, site, "/")
 epsg <- 32613
 
 # what is the approx centroid of where you want data from (in lat/lon)
-lon <- -105.54596
-lat <- 40.27590
+lon <- -104.74559
+lat <- 40.81554
 
 # turn that lat/lon into a sf object for R (with lat/lon epsg)
 centroid <- as.data.frame(matrix(data = c(lat, lon), nrow = 1, ncol = 2))
@@ -329,8 +329,11 @@ for (i in 1:nrow(tile_coords)) {
 # Step 7: Mosaic AOP tiles!
 # -----
 
-NEON.path <- paste0("./NEON_data/RMNP/DP3.30024.001/neon-aop-products/2020/",
-                    "FullSite/D09/2020_RMNP_3/L3/DiscreteLidar/DTMGtif/")
+file.exists("C:/Users/courtney/Documents/GitHub/geodiversity_2025/NEON_data/CPER/DP3.30024.001/neon-aop-products/2020/",
+            "FullSite/D10/2020_CPER_7/L3/DiscreteLidar/DTMGtif/")
+
+NEON.path <- paste0("C:/Users/courtney/Documents/GitHub/geodiversity_2025/NEON_data/CPER/DP3.30024.001/neon-aop-products/2020/",
+                    "FullSite/D10/2020_CPER_7/L3/DiscreteLidar/DTMGtif/")
 
 dem.files <- list.files(NEON.path)
 
