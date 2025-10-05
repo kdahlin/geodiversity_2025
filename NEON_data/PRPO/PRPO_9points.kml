@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document id="root_doc">
+<Folder><name>PRPO_9points</name>
+  <Placemark id="PRPO_9points.1">
+      <Point><coordinates>-99.1318410830917,47.1244286756769</coordinates></Point>
+  </Placemark>
+  <Placemark id="PRPO_9points.2">
+      <Point><coordinates>-99.1186570053913,47.1244430911843</coordinates></Point>
+  </Placemark>
+  <Placemark id="PRPO_9points.3">
+      <Point><coordinates>-99.105472918025,47.1244559892778</coordinates></Point>
+  </Placemark>
+  <Placemark id="PRPO_9points.4">
+      <Point><coordinates>-99.1318633207189,47.1334272122251</coordinates></Point>
+  </Placemark>
+  <Placemark id="PRPO_9points.5">
+      <Point><coordinates>-99.1186770192744,47.1334416322433</coordinates></Point>
+  </Placemark>
+  <Placemark id="PRPO_9points.6">
+      <Point><coordinates>-99.1054907081581,47.1334545343729</coordinates></Point>
+  </Placemark>
+  <Placemark id="PRPO_9points.7">
+      <Point><coordinates>-99.1318855690926,47.1424257345621</coordinates></Point>
+  </Placemark>
+  <Placemark id="PRPO_9points.8">
+      <Point><coordinates>-99.1186970428293,47.1424401590928</coordinates></Point>
+  </Placemark>
+  <Placemark id="PRPO_9points.9">
+      <Point><coordinates>-99.1055085068884,47.1424530652599</coordinates></Point>
+  </Placemark>
+</Folder>
+</Document></kml>
