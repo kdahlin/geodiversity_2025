@@ -11,3 +11,13 @@ plot(metrics)
 
 aspect <- terrain(r1, v = "aspect")
 plot(aspect)
+roughness <- terrain(r1, v = "roughness")
+plot(roughness)
+units(roughness) <- "m"
+plot(roughness)
+units(roughness) <- "cm"
+plot(roughness)
+
+install.packages("geodiv")
+library(geodiv)
+# Calculate geodiversity metrics
