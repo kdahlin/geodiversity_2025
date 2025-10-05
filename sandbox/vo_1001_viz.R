@@ -1,5 +1,6 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 library(terra)
 
 #Get path to mosaic data
@@ -17,6 +18,8 @@ plot(aspect)
 =======
 =======
 >>>>>>> Stashed changes
+=======
+>>>>>>> Stashed changes
 library(terra)
 
 #Get path to mosaic data
@@ -32,6 +35,9 @@ plot(metrics)
 aspect <- terrain(r1, v = "aspect")
 plot(aspect)
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
