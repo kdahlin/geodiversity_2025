@@ -6,6 +6,7 @@ library(geodiv)
 library(sf)
 library(tidyverse)
 library(viridis)
+library(parallel)
 
 mosaic_path <- ("~/Documents/GitHub/geodiversity_2025/processed_tifs/ORNL_2018_DEM_mosaic_20250925.tif")
 
@@ -174,19 +175,61 @@ print(sfd_norm_rem)
 mosaic_path_rmnp <- ("~/Documents/GitHub/geodiversity_2025/processed_tifs/RMNP_2020_DEM_mosaic_20251005.tif")
 
 r2 <- rast(mosaic_path_rmnp)
-plot(r2)
-
 functions_list <- (c("sa", "sq", "s10z", "sdq", "sdq6", 
-                   "sdr", "sbi","sci","ssk","sku","sds","sfd","srw","srw", 
-                   "srw","std", "std","svi","str","ssc","sv","sp","sk",
-                   "smean","spk","svk", "scl","sdc"))
+                   "sdr", "sbi","sci","ssk","sku","sds","sfd","srw", "std", 
+                   "svi","stxr","ssc","sv","sph","sk",
+                   "smean","spk","svk", "scl", "sdc"))
   
 results_list <- list()
-for (func in functions_list) {
+results_list <- mclapply(functions_list, function(func) {
   metric_fun <- get(func, envir = asNamespace("geodiv"))
-  results_list[[func]] <- metric_fun(r2)
-  print(paste("Calculated", func))
+  if (func == "sdc") {
+    value <- metric_fun(r2, low = 0, high = 0.05)
+  } else {
+    value <- metric_fun(r2)
+  }
+  list(func = func, value = value)
+}, mc.cores = 10)
+
+# turn results list into a dataframe 
+results_df <- data.frame(
+  func = sapply(results_list, function(x) x$func),
+  value = I(lapply(results_list, function(x) x$value))
+)
+
+print(results_df)
+
+#create results directory if it doesn't exist
+if (!dir.exists("results")) {
+  dir.create("results")
 }
+
+#save results table to csv
+write.csv(results_df, "results/rmnp_geodiversity_metrics.csv", row.names = F)
+
+#do the same for r1 - ORNL
+results_list_ORNL <- list()
+
+results_list_ORNL <- mclapply(functions_list, function(func) {
+  metric_fun <- get(func, envir = asNamespace("geodiv"))
+  if (func == "sdc") {
+    value <- metric_fun(r1, low = 0, high = 0.05)
+  } else {
+    value <- metric_fun(r1)
+  }
+  list(func = func, value = value)
+}, mc.cores = 10)
+
+# turn results list into a dataframe 
+results_df_ORNL <- data.frame(
+  func = sapply(results_list_ORNL, function(x) x$func),
+  value = I(lapply(results_list_ORNL, function(x) x$value))
+)
+
+print(results_df_ORNL)
+
+#save results table to csv
+write.csv(results_df_ORNL, "results/ornl_geodiversity_metrics.csv", row.names = F)
 
 
 #HEXAGONAL GRIDS BELOW - ENTER AT YOUR OWN RISK --------------------------------
