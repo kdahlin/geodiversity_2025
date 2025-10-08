@@ -30,14 +30,75 @@ eviTheme <- rasterTheme(region=eviCols)
                                  par.settings = eviTheme, xlab='Longitude', 
                                  ylab='Latitude', main='orforest original'))
 
-
-gitrm\\cached
-
 #get path to mosaic data
 mosaic_dem<- "C:/Users/Emma/871/geodiversity_2025/processed_tifs/ORNL_2018_DEM_mosaic_20250925.tif"
+cper_dem<- "C:/Users/Emma/871/geodiversity_2025/processed_tifs/CPER_2020_DEM_mosaic_20251005.tif" #data that courtney loaded
+wood_dem<- "C:/Users/Emma/871/geodiversity_2025/processed_tifs/WOOD_2020_DEM_mosaic_20251005.tif"
+ornl_dem<- "C:/Users/Emma/871/geodiversity_2025/processed_tifs/ORNL_2018_DEM_mosaic_20250925.tif"
+
 
 r1<-rast(mosaic_dem)
+r2<-rast(cper_dem) #data from courtney
+r3<-rast(wood_dem)
+r4<-rast(ornl_dem)
+
 plot(r1)
+plot(r2)
+plot(r3)
+plot(r4)
+
+#average roughness of the surface
+roughness <- sa(r4)
+roughness
+
+rtmean <- sq(r4)
+rtmean
+
+tenpoint <- s10z(r4)
+tenpoint
+
+rms2pt <- sdq(r4)
+rms2pt
+
+rms7pt <- sdq6(r4)
+rms7pt
+
+#surface area ratio
+surfarearatio <- sdr(r4)
+surfarearatio
+
+#surface bearing index
+surfbi <- sbi(r4)
+surfbi
+
+#height bearing area curve
+heightbac <- sdc(r4, low=0, high=0.05)
+heightbac
+
+#correlation length
+corrlength <- scl(r4)
+corrlength
+
+#reduced valley depth
+redvaldepth <- svk(r4)
+redvaldepth
+
+redpk <- spk(r4)
+redpk
+
+meanpkht <- smean(r4)
+meanpkht
+
+coreroughnessdepth <- sk(r4)
+coreroughnessdepth
+
+maxpeakh <- sph(r4)
+maxpeakh
+
+valleydep
+
+
+
 
 metrics<-terrain(r1)
 plot(metrics)
@@ -45,11 +106,5 @@ help(terrain)
 
 aspect<-terrain(r1, v="aspect")
 plot(aspect)
-
-#copy/paste run this if you haven't gotten HTTPS push to work yet:
-create_github_token()
-
-#once you get the token, run this and paste it in
-gitcreds::gitcreds_set()
 
 library(geodiv)
