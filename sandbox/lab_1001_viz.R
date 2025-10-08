@@ -176,15 +176,17 @@ mosaic_path_rmnp <- ("~/Documents/GitHub/geodiversity_2025/processed_tifs/RMNP_2
 r2 <- rast(mosaic_path_rmnp)
 plot(r2)
 
-metrics_list <- (c("slo", "nor", "east", "sa", "sq", "s10z", "sdq", "sdq6", 
+functions_list <- (c("sa", "sq", "s10z", "sdq", "sdq6", 
                    "sdr", "sbi","sci","ssk","sku","sds","sfd","srw","srw", 
                    "srw","std", "std","svi","str","ssc","sv","sp","sk",
                    "smean","spk","svk", "scl","sdc"))
-
-results <- lapply(metrics_list, function(metric) {
-  texture_image(r2, metric = metric)
-})
-names(results) <- metrics_list
+  
+results_list <- list()
+for (func in functions_list) {
+  metric_fun <- get(func, envir = asNamespace("geodiv"))
+  results_list[[func]] <- metric_fun(r2)
+  print(paste("Calculated", func))
+}
 
 
 #HEXAGONAL GRIDS BELOW - ENTER AT YOUR OWN RISK --------------------------------
