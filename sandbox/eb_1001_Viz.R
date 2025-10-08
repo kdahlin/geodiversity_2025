@@ -31,7 +31,7 @@ eviTheme <- rasterTheme(region=eviCols)
                                  ylab='Latitude', main='orforest original'))
 
 
-
+gitrm\\cached
 
 #get path to mosaic data
 mosaic_dem<- "C:/Users/Emma/871/geodiversity_2025/processed_tifs/ORNL_2018_DEM_mosaic_20250925.tif"
