@@ -23,13 +23,6 @@ r1_rem <- remove_plane(r1)
 #remove plane from normalized raster
 normr_rem <- remove_plane(normr)
 
-# plot with ggplot
-r1_vis <- ggplot() +
-  geom_raster(data = r1) +
-  scale_fill_viridis_c(option = "C") +
-  theme_minimal() +
-  labs(title = "Original Raster", fill = "Elevation")
-
 plot(r1)
 title("Original Raster")
 plot(r1_rem)
@@ -197,32 +190,63 @@ plot_sf <- function(sf_data) {
     geom_sf(data = sf_data, aes(fill = mean_elevation), color = NA) +
     scale_fill_viridis(option = "C", na.value = "transparent") +
     theme_minimal() +
-    labs(title = "Mean Elevation in 100m Hexes", fill = "Mean Elevation")
+    labs(title = "Mean Elevation in 100m Hexes ORNL", fill = "Mean Elevation")
 }
 plot_sf(hex_means)
 
 #calculate mean roughness for each hexagon
 hex_roughness <- zonal(roughness, r1_hex, fun = 'mean', na.rm = TRUE)
 head(hex_roughness)
+
 #plot the hex roughness on a map with viridis color scale
 hex_roughness <- as.data.frame(hex_roughness)
 colnames(hex_roughness) <- c("hex_id", "mean_roughness")
 hex_roughness <- left_join(hexes_sf, hex_roughness, by = "hex_id")
+
 #plot the hex roughness
 plot_sf <- function(sf_data) {
   ggplot() +
     geom_sf(data = sf_data, aes(fill = mean_roughness), color = NA) +
     scale_fill_viridis(option = "C", na.value = "transparent") +
     theme_minimal() +
-    labs(title = "Mean Roughness in 100m Hexes", fill = "Mean Roughness")
+    labs(title = "Mean Roughness in 100m Hexes ORNL", fill = "Mean Roughness")
 }
 plot_sf(hex_roughness)
 
+#calculate mean slope for each hexagon
+hex_slope <- zonal(slope, r1_hex, fun = 'mean', na.rm = TRUE)
+head(hex_slope)
+#plot the hex slope on a map with viridis color scale
+hex_slope <- as.data.frame(hex_slope)
+colnames(hex_slope) <- c("hex_id", "mean_slope")
+hex_slope <- left_join(hexes_sf, hex_slope, by = "hex_id")
+#plot the hex slope
+plot_sf <- function(sf_data) {
+  ggplot() +
+    geom_sf(data = sf_data, aes(fill = mean_slope), color = NA) +
+    scale_fill_viridis(option = "C", na.value = "transparent") +
+    theme_minimal() +
+    labs(title = "Mean Slope in 100m Hexes ORNL", fill = "Mean Slope")
+}
+#save the plot to figures directory
+plot_sf(hex_slope)
+ggsave("figures/mean_slope_hexes.png", width = 8, height = 6)
 
 
-
-
-
-
-
+#calculate mean aspect for each hexagon
+hex_aspect <- zonal(aspect, r1_hex, fun = 'mean', na.rm = TRUE)
+head(hex_aspect)
+#plot the hex aspect on a map with viridis color scale
+hex_aspect <- as.data.frame(hex_aspect)
+colnames(hex_aspect) <- c("hex_id", "mean_aspect")
+hex_aspect <- left_join(hexes_sf, hex_aspect, by = "hex_id")
+#plot the hex aspect
+plot_sf <- function(sf_data) {
+  ggplot() +
+    geom_sf(data = sf_data, aes(fill = mean_aspect), color = NA) +
+    scale_fill_viridis(option = "C", na.value = "transparent") +
+    theme_minimal() +
+    labs(title = "Mean Aspect in 100m Hexes ORNL", fill = "Mean Aspect")
+}
+plot_sf(hex_aspect)
 
