@@ -3,81 +3,226 @@
 
 library(terra)
 library(geodiv)
+library(sf)
+library(tidyverse)
+library(viridis)
 
 mosaic_path <- ("~/Documents/GitHub/geodiversity_2025/processed_tifs/ORNL_2018_DEM_mosaic_20250925.tif")
 
 r1 <- rast(mosaic_path)
-plot(r1)
-aspect <- terrain(r1, v="aspect")
-plot(aspect) 
-slope <- terrain(r1, v="slope")
-plot(slope)
-roughness <- terrain(r1, v="roughness")
-plot(roughness)
 
 #Normalize the raster
 stats <- global(r1,fun = c("mean", "sd"))
 mu <- stats$mean
 sigma <- stats$sd
 normr <- (r1-mu)/sigma
-plot(normr)
 
 #remove plane
 r1_rem <- remove_plane(r1)
-plot(r1_rem)
 
 #remove plane from normalized raster
 normr_rem <- remove_plane(normr)
+
+# plot with ggplot
+r1_vis <- ggplot() +
+  geom_raster(data = r1) +
+  scale_fill_viridis_c(option = "C") +
+  theme_minimal() +
+  labs(title = "Original Raster", fill = "Elevation")
+
+plot(r1)
+title("Original Raster")
+plot(r1_rem)
+title("Plane Removed Raster")
+plot(normr)
+title("Normalized Raster")
 plot(normr_rem)
+title("Normalized Plane Removed Raster")
+
+#aspect
+aspect <- terrain(r1, v="aspect")
+aspect_rem <- terrain(r1_rem, v="aspect")
+aspect_norm <- terrain(normr, v="aspect")
+aspect_norm_rem <- terrain(normr_rem, v="aspect")
+
+plot(aspect) 
+title("Aspect on original raster")
+plot(aspect_rem)
+title("Aspect on plane removed raster")
+plot(aspect_norm)
+title("Aspect on normalized raster")
+plot(aspect_norm_rem)
+title("Aspect on normalized plane removed raster")
+
+#slope
+slope <- terrain(r1, v="slope")
+slope_rem <- terrain(r1_rem, v="slope")
+slope_norm <- terrain(normr, v="slope")
+slope_norm_rem <- terrain(normr_rem, v="slope")
+
+plot(slope)
+title("Slope on original raster")
+plot(slope_rem)
+title("Slope on plane removed raster")
+plot(slope_norm)
+title("Slope on normalized raster")
+plot(slope_norm_rem)
+title("Slope on normalized plane removed raster")
+
+#roughness
+roughness <- terrain(r1, v="roughness")
+roughness_rem <- terrain(r1_rem, v="roughness")
+roughness_norm <- terrain(normr, v="roughness")
+roughness_norm_rem <- terrain(normr_rem, v="roughness")
+
+plot(roughness)
+title("Roughness on original raster")
+plot(roughness_rem)
+title("Roughness on plane removed raster")
+plot(roughness_norm)
+title("Roughness on normalized raster")
+plot(roughness_norm_rem)
+title("Roughness on normalized plane removed raster")
 
 #roughness on plane removed raster
 sa <- sa(r1)
-print(sa)
 sa_rem <- sa(r1_rem)
-print(sa_rem)
 sa_norm <- sa(normr)
-print(sa_norm)
 sa_norm_rem <- sa(normr_rem)
+
+print(sa)
+print(sa_rem)
+print(sa_norm)
 print(sa_norm_rem)
 
 #surface bearing index on plane removed raster
-sbi <- sbi(r1_rem)
+sbi <- sbi(r1)
+sbi_rem <- sbi(r1_rem)
+sbi_norm <- sbi(normr)
+sbi_norm_rem <- sbi(normr_rem)
+
 print(sbi)
+print(sbi_rem)
+print(sbi_norm)
+print(sbi_norm_rem)
 
 #Root Mean Square Roughness on plane removed raster
-sq <- sq(r1_rem)
+sq <- sq(r1)
 print(sq)
+sq_rem <- sq(r1_rem)
+print(sq_rem)
+sq_norm <- sq(normr)
+print(sq_norm)
+sq_norm_rem <- sq(normr_rem)
+print(sq_norm_rem)
 
 #Reduced Peak Height
-spk <- spk(r1_rem)
+spk <- spk(r1)
 print(spk)
+spk_rem <- spk(r1_rem)
+print(spk_rem)
+spk_norm <- spk(normr)
+print(spk_norm)
+spk_norm_rem <- spk(normr_rem)
+print(spk_norm_rem)
 
 #Ten Point Height
-s10z <- s10z(r1_rem, create_plot = TRUE)
+s10z <- s10z(r1)
+s10z_rem <- s10z(r1_rem)
+s10z_norm <- s10z(normr)
+s10z_norm_rem <- s10z(normr_rem)
+
 print(s10z)
+print(s10z_rem)
+print(s10z_norm)
+print(s10z_norm_rem)
 
 #Core Fluid Retention Index
-sci <- sci(r1_rem)
+sci <- sci(r1)
+sci_rem <- sci(r1_rem)
+sci_norm <- sci(normr)
+sci_norm_rem <- sci(normr_rem)
+
+print(sci)
 print(sci_rem)
+print(sci_norm)
+print(sci_norm_rem)
 
 #texture direction
 std <- std(r1, create_plot = TRUE)
-print(std)
 std_rem <- std(r1_rem, create_plot = TRUE)
-print(std_rem)
 std_norm <- std(normr, create_plot = TRUE)
-print(std_norm)
 std_norm_rem <- std(normr_rem, create_plot = TRUE)
+
+print(std)
+print(std_rem)
+print(std_norm)
 print(std_norm_rem)
 
 #fractal dimension
 sfd <- sfd(r1)
-print(sfd)
 sfd_rem <- sfd(r1_rem)
-print(sfd_rem)
 sfd_norm <- sfd(normr)
-print(sfd_norm)
 sfd_norm_rem <- sfd(normr_rem)
+
+print(sfd)
+print(sfd_rem)
+print(sfd_norm)
 print(sfd_norm_rem)
+
+
+# Create hexagonal grid over the raster
+hexes <- st_make_grid(r1, cellsize = 100, square = F)
+# Assign unique hex_id to each hexagon
+hexes_sf <- st_sf(geometry = hexes) %>%
+  mutate(hex_id = row_number())
+plot(r1)
+title("Hexagonal Grid over Raster")
+
+# Add hex_id to raster cells based on which hexagon they fall into
+r1_hex <- rasterize(vect(hexes_sf), r1, field = "hex_id", touches = TRUE)
+
+#calculate mean elevation for each hexagon
+hex_means <- zonal(r1, r1_hex, fun = 'mean', na.rm = TRUE)
+head(hex_means)
+
+#plot the hex means on a map with viridis color scale
+hex_means <- as.data.frame(hex_means)
+colnames(hex_means) <- c("hex_id", "mean_elevation")
+hex_means <- left_join(hexes_sf, hex_means, by = "hex_id")
+
+#plot the hex means
+plot_sf <- function(sf_data) {
+  ggplot() +
+    geom_sf(data = sf_data, aes(fill = mean_elevation), color = NA) +
+    scale_fill_viridis(option = "C", na.value = "transparent") +
+    theme_minimal() +
+    labs(title = "Mean Elevation in 100m Hexes", fill = "Mean Elevation")
+}
+plot_sf(hex_means)
+
+#calculate mean roughness for each hexagon
+hex_roughness <- zonal(roughness, r1_hex, fun = 'mean', na.rm = TRUE)
+head(hex_roughness)
+#plot the hex roughness on a map with viridis color scale
+hex_roughness <- as.data.frame(hex_roughness)
+colnames(hex_roughness) <- c("hex_id", "mean_roughness")
+hex_roughness <- left_join(hexes_sf, hex_roughness, by = "hex_id")
+#plot the hex roughness
+plot_sf <- function(sf_data) {
+  ggplot() +
+    geom_sf(data = sf_data, aes(fill = mean_roughness), color = NA) +
+    scale_fill_viridis(option = "C", na.value = "transparent") +
+    theme_minimal() +
+    labs(title = "Mean Roughness in 100m Hexes", fill = "Mean Roughness")
+}
+plot_sf(hex_roughness)
+
+
+
+
+
+
+
 
 
