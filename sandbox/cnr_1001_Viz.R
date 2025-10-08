@@ -1,19 +1,26 @@
-install.packages("geodiv")
+install.packages("cowplot")
 library(terra)
 library(sf)
 library(geodiv)
+library(ggplot2)
+library(cowplot)
 
 #get path to mosaic ORNL, STRIPEY
 
 mosaic.dem <- "C:\\Users\\courtney\\Documents\\GitHub\\geodiversity_2025\\processed_tifs\\ORNL_2018_DEM_mosaic_20250925.tif"
 r1 <- rast(mosaic.dem)
 plot(r1)
+r1plot <- plot(r1)
 
 metrics <- terrain(r1)
 plot(metrics)
+metricsplot <- plot(metrics)
 
 aspect <- terrain(r1, v = "aspect")
 plot(aspect)
+aspectplot <- plot(aspect)
+
+plot_grid(r1plot, metricsplot, aspectplot, legend, ncol = 4, rel_widths = c(1, 1, 1, 0.3))
 
 #get path to mosaic WOOD, LUMPY
 
@@ -39,6 +46,9 @@ plot(metrics)
 aspect <- terrain(r1, v = "aspect")
 plot(aspect)
 
+slope <- terrain(r1, v = "slope")
+plot(slope)
+
 #get path to mosaic CPER, FLAT
 
 mosaic.dem <- "C:\\Users\\courtney\\Documents\\GitHub\\geodiversity_2025\\processed_tifs\\CPER_2020_DEM_mosaic_20251005.tif"
@@ -50,10 +60,6 @@ plot(metrics)
 
 aspect <- terrain(r1, v = "aspect")
 plot(aspect)
-
-
-
-
 
 ## Get NEON data
 
