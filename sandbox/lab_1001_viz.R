@@ -9,6 +9,8 @@ library(viridis)
 
 mosaic_path <- ("~/Documents/GitHub/geodiversity_2025/processed_tifs/ORNL_2018_DEM_mosaic_20250925.tif")
 
+#ORNL ANALYSIS (OAK RIDGE NATIONAL LAB) ----------------------------------------
+
 r1 <- rast(mosaic_path)
 
 #Normalize the raster
@@ -101,22 +103,24 @@ print(sbi_norm_rem)
 
 #Root Mean Square Roughness on plane removed raster
 sq <- sq(r1)
-print(sq)
 sq_rem <- sq(r1_rem)
-print(sq_rem)
 sq_norm <- sq(normr)
-print(sq_norm)
 sq_norm_rem <- sq(normr_rem)
+
+print(sq)
+print(sq_rem)
+print(sq_norm)
 print(sq_norm_rem)
 
 #Reduced Peak Height
 spk <- spk(r1)
-print(spk)
 spk_rem <- spk(r1_rem)
-print(spk_rem)
 spk_norm <- spk(normr)
-print(spk_norm)
 spk_norm_rem <- spk(normr_rem)
+
+print(spk)
+print(spk_rem)
+print(spk_norm)
 print(spk_norm_rem)
 
 #Ten Point Height
@@ -164,12 +168,34 @@ print(sfd_norm)
 print(sfd_norm_rem)
 
 
+#RMNP ANALYSIS (ROCKY MOUNTAIN NATIONAL PARK) ----------------------------------
+
+#Get path to RMNP mosaic data
+mosaic_path_rmnp <- ("~/Documents/GitHub/geodiversity_2025/processed_tifs/RMNP_2020_DEM_mosaic_20251005.tif")
+
+r2 <- rast(mosaic_path_rmnp)
+plot(r2)
+
+metrics_list <- (c("slo", "nor", "east", "sa", "sq", "s10z", "sdq", "sdq6", 
+                   "sdr", "sbi","sci","ssk","sku","sds","sfd","srw","srw", 
+                   "srw","std", "std","svi","str","ssc","sv","sp","sk",
+                   "smean","spk","svk", "scl","sdc"))
+
+results <- lapply(metrics_list, function(metric) {
+  texture_image(r2, metric = metric)
+})
+names(results) <- metrics_list
+
+
+#HEXAGONAL GRIDS BELOW - ENTER AT YOUR OWN RISK --------------------------------
+
 # Create hexagonal grid over the raster
 hexes <- st_make_grid(r1, cellsize = 100, square = F)
 # Assign unique hex_id to each hexagon
 hexes_sf <- st_sf(geometry = hexes) %>%
   mutate(hex_id = row_number())
 plot(r1)
+plot(st_geometry(hexes_sf), add = TRUE, border = 'red')
 title("Hexagonal Grid over Raster")
 
 # Add hex_id to raster cells based on which hexagon they fall into
