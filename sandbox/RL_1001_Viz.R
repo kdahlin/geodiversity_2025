@@ -8,12 +8,12 @@ library(cowplot)
 library(sf)
 library(rasterVis)
 
-setwd("C://Users/rache/Documents/geodiversity_2025/geodiversity_2025/")
+setwd("C://Users/rache/Documents/geodiversity_2025/sandbox/")
 
-ORNL <- "C://Users/rache/Documents/geodiversity_2025/geodiversity_2025/processed_tifs/ORNL_2018_DEM_mosaic_20250925.tif"
-CPER <- "C://Users/rache/Documents/geodiversity_2025/geodiversity_2025/processed_tifs/CPER_2020_DEM_mosaic_20251005.tif"
-RMNP <- "C://Users/rache/Documents/geodiversity_2025/geodiversity_2025/processed_tifs/RMNP_2020_DEM_mosaic_20251005.tif"
-WOOD <- "C://Users/rache/Documents/geodiversity_2025/geodiversity_2025/processed_tifs/WOOD_2020_DEM_mosaic_20251005.tif"
+ORNL <- "C://Users/rache/Documents/geodiversity_2025/processed_tifs/ORNL_2018_DEM_mosaic_20250925.tif"
+CPER <- "C://Users/rache/Documents/geodiversity_2025/processed_tifs/CPER_2020_DEM_mosaic_20251005.tif"
+RMNP <- "C://Users/rache/Documents/geodiversity_2025/processed_tifs/RMNP_2020_DEM_mosaic_20251005.tif"
+WOOD <- "C://Users/rache/Documents/geodiversity_2025/processed_tifs/WOOD_2020_DEM_mosaic_20251005.tif"
 
 r1<-rast(ORNL)
 plot(r1)
@@ -24,7 +24,7 @@ plot(ORNL_slope)
 plot(ORNL_aspect)
 
 r2<-rast(RMNP)
-plot(RMNP_r1)
+plot(r2)
 
 ###Calulate global surface gradient metrics
 #Average roughness
@@ -103,16 +103,29 @@ ORNL_valleydepth
 ORNL_peak<- sph(r1)
 ORNL_peak
 
+#core roughness depth
+ORNL_roughnessdepth<- sk(r1)
+ORNL_roughnessdepth
+
+#mean peak height
+ORNL_peakheight<- smean(r1)
+ORNL_peakheight
+
+#reduced valley depth
+ORNL_reducedvalley<- svk(r1)
+ORNL_reducedvalley
+
+#reduced peak height
+ORNL_reducedpeak<- spk(r1)
+ORNL_reducedpeak
+
+#correlation length
+ORNL_corrlength<- scl(r1)
+ORNL_corrlength
+
 #bearing area curve height interval
 ORNL_bearing<- sdc(r1, low=0, high=0.05)
 ORNL_bearing
-
-19. 'sph': maximum peak height
-20. 'sk': core roughness depth
-21. 'smean': mean peak height
-22. 'svk': reduced valley depth
-23. 'spk': reduced peak height
-24. 'scl': correlation length
 
 
 
