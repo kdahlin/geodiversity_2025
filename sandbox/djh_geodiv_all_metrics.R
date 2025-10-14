@@ -33,7 +33,7 @@ tifs <- c("processed_tifs/ORNL_2018_DEM_mosaic_20250925.tif",
 listed_full_results <- mclapply(tifs, function(tif) {
   r1 <- rast(tif)
   #Just use a for loop to traverse the list of functions
-  vals <- list()
+  vals <- c()
   for (func in functions_list){
     metric_fun <- get(func, envir = asNamespace("geodiv"))
     if (func == "sdc") { 
@@ -56,7 +56,7 @@ indices_list <- (c("sa", "sq", "s10z", "sdq", "sdq6",
                    "svi","stxr","ssc","sv","sph","sk",
                    "smean","spk","svk","scllow","sclhigh","sdc"))
 
-results_df_wood <- data.frame(
+results_df <- data.frame(
   func = indices_list,
   ORNL = listed_full_results[[1]],
   RMNP = listed_full_results[[2]],
@@ -64,8 +64,8 @@ results_df_wood <- data.frame(
   WOOD = listed_full_results[[4]]
 )
 
-print(results_df_wood)
+print(results_df)
 
 #save results table to csv
-write.csv(results_df_wood, "results/wood_geodiversity_metrics.csv", row.names = F)
+write.csv(results_df, "results/full_geodiversity_metrics.csv", row.names = F)
 # DONE -----
