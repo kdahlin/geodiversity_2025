@@ -19,6 +19,8 @@ library(cowplot)
 library(factoextra)
 library(cluster)
 
+setwd("C:/Users/Emma/871/geodiversity_2025")
+
 #Practice using the Geodiv Package
 data(orforest)
 orforest
@@ -35,17 +37,70 @@ mosaic_dem<- "C:/Users/Emma/871/geodiversity_2025/processed_tifs/ORNL_2018_DEM_m
 cper_dem<- "C:/Users/Emma/871/geodiversity_2025/processed_tifs/CPER_2020_DEM_mosaic_20251005.tif" #data that courtney loaded
 wood_dem<- "C:/Users/Emma/871/geodiversity_2025/processed_tifs/WOOD_2020_DEM_mosaic_20251005.tif"
 ornl_dem<- "C:/Users/Emma/871/geodiversity_2025/processed_tifs/ORNL_2018_DEM_mosaic_20250925.tif"
-
+rmnp_dem<- "C:/Users/Emma/871/geodiversity_2025/processed_tifs/RMNP_2020_DEM_mosaic_20251005.tif"
 
 r1<-rast(mosaic_dem)
 r2<-rast(cper_dem) #data from courtney
 r3<-rast(wood_dem)
 r4<-rast(ornl_dem)
+r5<-rast(rmnp_dem)
 
 plot(r1)
 plot(r2)
 plot(r3)
 plot(r4)
+plot(r5)
+
+#NOT geodiv package- trying to measure curvature using spatialEco package
+# step 1 install package
+install.packages("spatialEco")
+library(spatialEco)
+library(terra) #already did it above but just to be sure
+
+# step 2 load DEM
+elev<-rast("C:/Users/Emma/871/geodiversity_2025/processed_tifs/ORNL_2018_DEM_mosaic_20250925.tif")
+
+# step 3 calculate curvature types
+
+profile_curv<-curvature(elev,type="profile")  #profile curvature
+
+planform_curv<-curvature(elev,type="planform") # plan curvature
+
+total_curv<-curvature(elev,type="total")  #total/sum curvature
+
+# step 4 plot
+
+plot(profile_curv,main="CPER Profile curvature")
+plot(planform_curv,main="CPER Plan curvature")
+plot(total_curv,main="CPER total curvature")
+
+print(total_curv)
+
+
+
+#Repeat!!!!!!!!!!!!!!!!!! Rocky mountain for maybe some more variation...
+# step 2 load DEM
+elevrm<-rast("C:/Users/Emma/871/geodiversity_2025/processed_tifs/RMNP_2020_DEM_mosaic_20251005.tif")
+
+# step 3 calculate curvature types
+
+profile_curvrm<-curvature(elevrm,type="profile")  #profile curvature
+
+planform_curvrm<-curvature(elevrm,type="planform") # plan curvature
+
+total_curvrm<-curvature(elevrm,type="total")  #total/sum curvature
+
+# step 4 plot
+
+plot(profile_curvrm,main="RMNP Profile curvature")
+plot(planform_curvrm,main="RMNP Plan curvature")
+plot(total_curvrm,main="RMNP total curvature")
+
+print(total_curvrm)
+
+
+
+
 
 #average roughness of the surface
 roughness <- sa(r4)
@@ -96,9 +151,6 @@ maxpeakh <- sph(r4)
 maxpeakh
 
 valleydep
-
-
-
 
 metrics<-terrain(r1)
 plot(metrics)
