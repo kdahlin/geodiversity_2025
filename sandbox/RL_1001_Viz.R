@@ -8,12 +8,12 @@ library(cowplot)
 library(sf)
 library(rasterVis)
 
-setwd("C://Users/rache/Documents/geodiversity_2025/geodiversity_2025/")
+setwd("C://Users/rache/Documents/geodiversity_2025/sandbox/")
 
-ORNL <- "C://Users/rache/Documents/geodiversity_2025/geodiversity_2025/processed_tifs/ORNL_2018_DEM_mosaic_20250925.tif"
-CPER <- "C://Users/rache/Documents/geodiversity_2025/geodiversity_2025/processed_tifs/CPER_2020_DEM_mosaic_20251005.tif"
-RMNP <- "C://Users/rache/Documents/geodiversity_2025/geodiversity_2025/processed_tifs/RMNP_2020_DEM_mosaic_20251005.tif"
-WOOD <- "C://Users/rache/Documents/geodiversity_2025/geodiversity_2025/processed_tifs/WOOD_2020_DEM_mosaic_20251005.tif"
+ORNL <- "C://Users/rache/Documents/geodiversity_2025/processed_tifs/ORNL_2018_DEM_mosaic_20250925.tif"
+CPER <- "C://Users/rache/Documents/geodiversity_2025/processed_tifs/CPER_2020_DEM_mosaic_20251005.tif"
+RMNP <- "C://Users/rache/Documents/geodiversity_2025/processed_tifs/RMNP_2020_DEM_mosaic_20251005.tif"
+WOOD <- "C://Users/rache/Documents/geodiversity_2025/processed_tifs/WOOD_2020_DEM_mosaic_20251005.tif"
 
 r1<-rast(ORNL)
 plot(r1)
@@ -24,7 +24,7 @@ plot(ORNL_slope)
 plot(ORNL_aspect)
 
 r2<-rast(RMNP)
-plot(RMNP_r1)
+plot(r2)
 
 ###Calulate global surface gradient metrics
 #Average roughness
@@ -103,18 +103,106 @@ ORNL_valleydepth
 ORNL_peak<- sph(r1)
 ORNL_peak
 
+#core roughness depth
+ORNL_roughnessdepth<- sk(r1)
+ORNL_roughnessdepth
+
+#mean peak height
+ORNL_peakheight<- smean(r1)
+ORNL_peakheight
+
+#reduced valley depth
+ORNL_reducedvalley<- svk(r1)
+ORNL_reducedvalley
+
+#reduced peak height
+ORNL_reducedpeak<- spk(r1)
+ORNL_reducedpeak
+
+#correlation length
+ORNL_corrlength<- scl(r1)
+ORNL_corrlength
+
 #bearing area curve height interval
 ORNL_bearing<- sdc(r1, low=0, high=0.05)
 ORNL_bearing
 
-19. 'sph': maximum peak height
-20. 'sk': core roughness depth
-21. 'smean': mean peak height
-22. 'svk': reduced valley depth
-23. 'spk': reduced peak height
-24. 'scl': correlation length
+###################Test####################
+
+# create 11x11 grid over raster extent
+grid_sf <- st_make_grid(
+  st_as_sfc(st_bbox(r1)),   # convert raster extent to sf geometry
+  n = c(11, 11),             # 3x3 grid
+  what = "polygons"
+) |> st_as_sf()            # return as sf object
+st_crs(grid_sf) <- st_crs(r1) #coord system
+
+# assign IDs
+grid_sf$id <- seq_len(nrow(grid_sf))
+
+# calculate metrics (ORNL) for for each grid
+for (i in seq_len(nrow(grid_sf))) {
+  sub_r <- crop(r1, vect(grid_sf[i, ]))
+  mat <- as.matrix(sub_r, wide = TRUE)
+  grid_sf$ORNL_curvature[i] <- geodiv::ssc(mat)
+}
+
+# Plot for each grid
+ggplot() +
+  geom_sf(data = grid_sf, aes(fill = ORNL_curvature), color = "black", linewidth = 0.3) +
+  scale_fill_viridis_c(option = "plasma", na.value = "grey90") +
+  labs(
+    title = "ORNL Curvature (ssc) per 11×11 Grid Cell",
+    fill = "Curvature"
+  ) +
+  theme_minimal()
+
+###################MultiscaleDTM####################
+#https://cran.r-project.org/web/packages/MultiscaleDTM/MultiscaleDTM.pdf
+#Calculates multi-scale geomorphometric terrain attributes from regularly gridded digital terrain models using a variable focal windows size
+library(MultiscaleDTM)
+
+#fits a quadratic surface and can be used to calculate slope, aspect, curvatures, and provide a map of discrete landform classes
+#default 3x3 window
+qfit1<-Qfit(r1)
+plot(qfit1)
+
+#11x11 window
+qfit2<-Qfit(r1, w=11, metrics =c('qslope', 'qaspect', 'qeastness', 'qnorthness',
+                                 'profc', 'planc', 'twistc', 'meanc', 'features'),
+            slope_tolerance = 2, force_center=TRUE, include_scale=TRUE, na.rm=TRUE)
+plot(qfit2)
+
+meanc <- qfit2$meanc_11x11
+meanc
+plot(meanc)
+
+# Convert grid_sf to terra vector
+grid_vect <- vect(grid_sf)
+
+# Extract meanc for each polygon directly
+# This computes the mean of all raster cells inside each polygon
+vals <- terra::extract(qfit2$meanc_11x11, grid_vect, fun = mean, na.rm = TRUE)
+
+# Attach to grid_sf
+grid_sf$meanc <- vals[,2] 
+
+ggplot() +
+  geom_sf(data = grid_sf, aes(fill = meanc), color = "black", linewidth = 0.3) +
+  scale_fill_viridis_c(option = "plasma", na.value = "grey90") +
+  labs(
+    title = "Local Mean Curvature (aggregated by 11×11 grid)",
+    fill = "Mean curvature"
+  ) +
+  theme_minimal()
+
+#Calculating roughness via adjusted standard deviation
+adjsd1<-AdjSD(r1, include_scale=TRUE)
+plot(adjsd1)
 
 
+
+###################Others####################
 
 #texture direction metrics
 texturedirection <- std(r1, create_plot = FALSE, option=1)

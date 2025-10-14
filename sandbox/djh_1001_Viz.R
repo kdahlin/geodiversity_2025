@@ -2,7 +2,7 @@ library(terra)
 library(geodiv)
 
 #Get path to mosaic data
-mosaic_dem <- "C:\\Users\\dillo\\Documents\\GitHub\\geodiversity_2025\\processed_tifs\\ORNL_2018_DEM_mosaic_20250925.tif"
+mosaic_dem <- "C:\\Users\\hallerdi\\Documents\\Dillon_Classes\\geodiversity_2025\\processed_tifs\\ORNL_2018_DEM_mosaic_20250925.tif"
 
 r1 <- rast(mosaic_dem)
 plot(r1)
