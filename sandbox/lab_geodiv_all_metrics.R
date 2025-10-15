@@ -2,6 +2,25 @@
 library(terra)
 library(geodiv)
 library(parallel)
+library(snow)
+
+#get operating system info
+os <-.Platform$OS.type
+print(os)
+
+#if on windows, load snow package for parallel processing, otherwise use mclapply
+if (os == "windows") {
+  library(snow)
+  cl <- makeCluster(detectCores() - 1) #leave one core free
+  clusterEvalQ(cl, {
+    library(terra)
+    library(geodiv)
+  })
+  clusterExport(cl, varlist = c("mosaic_path_ornl", "mosaic_path_rmnp", "mosaic_path_cper", "mosaic_path_wood", "functions_list"))
+  mc.cores <- cl
+} else {
+  mc.cores <- detectCores() - 1 #leave one core free
+}
 
 #create results directory if it doesn't exist
 if (!dir.exists("results")) {
