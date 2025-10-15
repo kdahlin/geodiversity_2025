@@ -95,7 +95,6 @@ wide_df <- expanded_df %>%
 
 # Save to CSV
 write.csv(wide_df, "sandbox/results/all_geodiversity_metrics_expanded.csv", row.names = FALSE)
-
 print(wide_df)
 
 #DONE -----
