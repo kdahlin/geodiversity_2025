@@ -31,7 +31,7 @@ library(neonUtilities)
 date <- "20251015"
 
 # directory to save "raw" neon data to (working in github)
-save.directory <- "C:/Users/courtney/Documents/GitHub/geodiversity_2025/NEON_data/"
+save.directory <- "C:/Users/kylad/Documents/GitHub/geodiversity_2025/NEON_data/"
 
 # Site Code and Year
 site <- "RMNP" 
@@ -270,7 +270,7 @@ tile_points2 <- st_as_sf(tile_coords_new,
 # create map of adjoining tiles for verification
 tiles_map2 <- ggplot(data = states_utm) +
   geom_sf() +
-  geom_sf(data = states_utm, fill = NA)+
+  #geom_sf(data = states_utm, fill = NA)+
   geom_sf(data = tile_points2, size = 3, shape = 24, fill = "blue")+
   geom_sf(data = tile_points, size = 3, shape = 24, fill = "lightgreen")+
   coord_sf(xlim = c(eastmin, eastmax), ylim = c(northmin, northmax), crs = epsg, datum = epsg) +
@@ -340,3 +340,15 @@ writeRaster(mosaic.dem, out.mosaic.name,
 # all done!
 # -----
 
+<<<<<<< HEAD
+=======
+
+############# new ideas ####################
+# figure out the max and min eastings and northings you want
+east_seq <- seq(east_min, east_max, by = 1000)
+north_seq <- seq(north_min, north_max, by = 1000)
+
+grid <- expand.grid(easting = east_seq,
+                    northing = north_seq)
+
+>>>>>>> 1b728accd754cf8ad1de04af14ede6b1c156fda1
