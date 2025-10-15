@@ -5,6 +5,9 @@ library(parallel)
 library(parallelly)
 library(snow)
 
+#Set a working directory
+setwd("C:/Users/leobaldiga/Documents/GitHub/geodiversity_2025") #Change this to the location of your own geodiv folder
+
 #create results directory if it doesn't exist
 if (!dir.exists("results")) {
   dir.create("results")
@@ -16,67 +19,83 @@ functions_list <- (c("sa", "sq", "s10z", "sdq", "sdq6",
                      "svi","stxr","ssc","sv","sph","sk",
                      "smean","spk","svk", "scl", "sdc"))
 
-# Cross-platform parallel processing function
-cross_platform_parallel <- function(func_list, raster_data, num_cores) {
-  
-  # Detect OS and use appropriate parallel method
-  if (.Platform$OS.type == "windows") {
-    
-    # Windows: Use parLapply with PSOCK cluster
-    cl <- makePSOCKcluster(num_cores)
-    
-    # Export necessary objects to cluster
-    clusterExport(cl, c("raster_data"), envir = environment())
-    
-    # Load required packages on each worker
-    clusterEvalQ(cl, {
-      library(terra)
-      library(geodiv)
-    })
-    
-    # Run parallel computation
-    results <- parLapply(cl, func_list, function(func) {
-      metric_fun <- get(func, envir = asNamespace("geodiv"))
-      if (func == "sdc") {
-        value <- metric_fun(raster_data, low = 0, high = 0.05)
-      } else {
-        value <- metric_fun(raster_data)
-      }
-      list(func = func, value = value)
-    })
-    
-    # Stop cluster
-    stopCluster(cl)
-    
-  } else {
-    
-    # Unix systems (Linux/macOS): Use mclapply
-    results <- mclapply(func_list, function(func) {
-      metric_fun <- get(func, envir = asNamespace("geodiv"))
-      if (func == "sdc") {
-        value <- metric_fun(raster_data, low = 0, high = 0.05)
-      } else {
-        value <- metric_fun(raster_data)
-      }
-      list(func = func, value = value)
-    }, mc.cores = num_cores)
-    
-  }
-  return(results)
-}
+#Define location codes
+locations <- c("ORNL",
+               "RMNP",
+               "CPER",
+               "WOOD")
 
+#Define folder locations of tifs
+tifs <- c("processed_tifs/ORNL_2018_DEM_mosaic_20250925.tif")
 
-# Detect number of cores (leave one free for system)
+#"processed_tifs/RMNP_2020_DEM_mosaic_20251005.tif",
+#"processed_tifs/CPER_2020_DEM_mosaic_20251005.tif",
+#"processed_tifs/WOOD_2020_DEM_mosaic_20251005.tif"
+
+#robust detect cores available, won't result in 0 or negative
 num_cores <- parallelly::availableCores(omit = 2)
 
+# Define worker task: compute all metrics for one TIFF
+compute_metrics_for_tif <- function(filepath, funcs) {
+  library(terra)
+  library(geodiv)
+  r <- rast(filepath)
+  
+  res_list <- lapply(funcs, function(f) {
+    metric_fun <- get(f, envir = asNamespace("geodiv"))
+    if (f == "sdc") {
+      val <- metric_fun(r, low = 0, high = 0.05)
+    } else {
+      val <- metric_fun(r)
+    }
+    list(func = f, value = val)
+  })
+  
+  # Combine metrics for this raster
+  data.frame(
+    file = basename(filepath),
+    func = sapply(res_list, `[[`, "func"),
+    value = I(lapply(res_list, `[[`, "value"))
+  )
+}
+
+# --- Cross‑platform run ---
+if (.Platform$OS.type == "windows") {
+  cl <- makePSOCKcluster(num_cores)
+  clusterExport(cl, c("tifs", "functions_list", "compute_metrics_for_tif"))
+  clusterEvalQ(cl, { library(terra); library(geodiv) })
+  
+  results_all <- parLapply(cl, tifs, compute_metrics_for_tif, funcs = functions_list)
+  stopCluster(cl)
+  
+} else {
+  # Unix uses forking (faster)
+  results_all <- mclapply(tifs, compute_metrics_for_tif, funcs = functions_list,
+                          mc.cores = num_cores)
+}
+
+# Bind all results together
+results_df <- do.call(rbind, results_all)
+
+# Save combined results
+write.csv(results_df, "results/all_geodiversity_metrics.csv", row.names = FALSE)
+
+print(head(results_df))
+
+#DONE -----
+
+
+#----- OLD CODE BELOW -----
 # Choose parallel method based on OS
 if (.Platform$OS.type == "windows") {
-  # Windows version
   cl <- makePSOCKcluster(num_cores)
-  clusterExport(cl, c("r1", "functions_list"))
-  clusterEvalQ(cl, {library(terra); library(geodiv)})
-  
+  clusterExport(cl, c("mosaic_path_ornl", "functions_list"))
+  clusterEvalQ(cl, {
+    library(terra)
+    library(geodiv)
+  })
   results_list_ornl <- parLapply(cl, functions_list, function(func) {
+    r1 <- terra::rast(mosaic_path_ornl)  # Recreate within each worker function
     metric_fun <- get(func, envir = asNamespace("geodiv"))
     if (func == "sdc") {
       value <- metric_fun(r1, low = 0, high = 0.05)
@@ -85,8 +104,8 @@ if (.Platform$OS.type == "windows") {
     }
     list(func = func, value = value)
   })
-  
   stopCluster(cl)
+  
 } else {
   # Unix version (original)
   results_list_ornl <- mclapply(functions_list, function(func) {
@@ -103,7 +122,7 @@ if (.Platform$OS.type == "windows") {
 
 
 #ORNL -----
-mosaic_path_ornl <- ("~/Documents/GitHub/geodiversity_2025/processed_tifs/ORNL_2018_DEM_mosaic_20250925.tif")
+mosaic_path_ornl <- ("C:/Users/leobaldiga/Documents/GitHub/geodiversity_2025/processed_tifs/ORNL_2018_DEM_mosaic_20250925.tif")
 r1 <- rast(mosaic_path_ornl)
 
 # Run the cross-platform parallel computation
