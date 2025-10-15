@@ -321,3 +321,45 @@ plot_sf <- function(sf_data) {
 }
 plot_sf(hex_aspect)
 
+#RMNP Plotting --------------------------------
+
+plot(r2)
+#get min and max of r2
+r2_min <- global(r2, fun = 'min', na.rm = TRUE)
+r2_max <- global(r2, fun = 'max', na.rm = TRUE)
+r2_min
+r2_max
+
+#get mean of r2
+r2_mean <- global(r2, fun = 'mean', na.rm = TRUE)
+r2_mean
+#get the extent of r2
+r2_ext <- ext(r2)
+r2_ext
+#convert UTM extent to Decimal Degrees
+library(sf)
+library(sp)
+library(rgdal)
+# Create a SpatialPoints object with the UTM coordinates
+utm_coords <- data.frame(
+  x = c(r2_ext[1], r2_ext[2]),
+  y = c(r2_ext[3], r2_ext[4])
+)
+coordinates(utm_coords) <- ~x+y
+proj4string(utm_coords) <- CRS("+proj=utm +zone=13 +datum=WGS84 +units=m +no_defs")
+# Transform to latitude/longitude
+latlong_coords <- spTransform(utm_coords, CRS("+proj=longlat +datum=WGS84"))
+latlong_coords
+#get the centroid of the extent
+centroid <- c((r2_ext[1] + r2_ext[2]) / 2, (r2_ext[3] + r2_ext[4]) / 2)
+centroid
+#convert centroid to lat long
+centroid_sp <- data.frame(x = centroid[1], y = centroid[2])
+coordinates(centroid_sp) <- ~x+y
+proj4string(centroid_sp) <- CRS("+proj=utm +zone=13 +datum=WGS84 +units=m +no_defs")
+centroid_latlong <- spTransform(centroid_sp, CRS("+proj=longlat +datum=WGS84"))
+centroid_latlong
+
+
+
+
