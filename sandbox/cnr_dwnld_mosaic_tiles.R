@@ -226,6 +226,8 @@ ggdraw(tiles_map) +
 # Step 4 (Optional): Select adjoining tiles 
 #------
 # run function
+# need a list of 6 northings and eastings
+#each 1000m apart of eachother
 adjoin_neon_tiles <- function(coords, kmbuffer = 1) {
   # coords: data.frame with columns "easting" and "northing"
   # kmbuffer: number of km outward to extend in all directions
@@ -288,7 +290,8 @@ st_write(tile_points2, paste0(save.directory, "/", site,  "_9points.shp"),
 
 # select which coordinates you want to keep (remember you only want the lower
 # left corner of each tile)
-tile_coords <- tile_coords_new[c(2,3,5,6), ]
+## need to download 36 more 'points' 
+tile_coords <- grid
 
 #------
 # Step 6: Get data from NEON!
@@ -315,6 +318,7 @@ NEON.path <- paste0("C:/Users/courtney/Documents/GitHub/geodiversity_2025/NEON_d
                     "FullSite/D10/2020_RMNP_3/L3/DiscreteLidar/DTMGtif/")
 
 dem.files <- list.files(NEON.path)
+#draw out the tiles to ensure pulling right four, visual help!
 
 tile1 <- rast(paste0(NEON.path, dem.files[2]))
 tile2 <- rast(paste0(NEON.path, dem.files[3]))
@@ -335,3 +339,4 @@ writeRaster(mosaic.dem, out.mosaic.name,
 # -----
 # all done!
 # -----
+
