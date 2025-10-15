@@ -132,7 +132,7 @@ ORNL_bearing
 # create 11x11 grid over raster extent
 grid_sf <- st_make_grid(
   st_as_sfc(st_bbox(r1)),   # convert raster extent to sf geometry
-  n = c(11, 11),             # 3x3 grid
+  n = c(11, 11),             # 11x11 grid
   what = "polygons"
 ) |> st_as_sf()            # return as sf object
 st_crs(grid_sf) <- st_crs(r1) #coord system
@@ -164,18 +164,13 @@ library(MultiscaleDTM)
 
 #fits a quadratic surface and can be used to calculate slope, aspect, curvatures, and provide a map of discrete landform classes
 #default 3x3 window
-qfit1<-Qfit(r1)
+#11x11 window
+qfit1<-Qfit(r1, w=3, metrics =c('profc'), slope_tolerance = 2, force_center=TRUE, include_scale=TRUE, na.rm=TRUE)
 plot(qfit1)
 
-#11x11 window
-qfit2<-Qfit(r1, w=11, metrics =c('qslope', 'qaspect', 'qeastness', 'qnorthness',
-                                 'profc', 'planc', 'twistc', 'meanc', 'features'),
-            slope_tolerance = 2, force_center=TRUE, include_scale=TRUE, na.rm=TRUE)
-plot(qfit2)
-
-meanc <- qfit2$meanc_11x11
-meanc
-plot(meanc)
+profc <- qfit1$profc_3x3
+summary(profc)
+plot(profc)
 
 # Convert grid_sf to terra vector
 grid_vect <- vect(grid_sf)
@@ -199,6 +194,22 @@ ggplot() +
 #Calculating roughness via adjusted standard deviation
 adjsd1<-AdjSD(r1, include_scale=TRUE)
 plot(adjsd1)
+
+# calculate metrics (ORNL) for for each grid
+for (i in seq_len(nrow(grid_sf))) {
+  sub_r <- crop(r1, vect(grid_sf[i, ]))
+  mat <- as.matrix(sub_r, wide = TRUE)
+  grid_sf$ORNL_profc_multiDTM[i] <- MultiscaleDTM::Qfit(mat)
+}
+
+######################SpatialEco###########################
+library(spatialEco)
+
+SpaEco_curv<-curvature(r1, type="profile")  #profile curvature from SpaEco package
+summary(values(SpaEco_curv))
+
+SpaEco_curv_clip <- clamp(SpaEco_curv, lower=-0.01, upper=0.01)
+plot(SpaEco_curv_clip, zlim=c(-0.01, 0.01))
 
 
 
