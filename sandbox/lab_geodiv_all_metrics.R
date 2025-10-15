@@ -66,6 +66,42 @@ cross_platform_parallel <- function(func_list, raster_data, num_cores) {
 }
 
 
+# Detect number of cores (leave one free for system)
+num_cores <- parallelly::availableCores(omit = 2)
+
+# Choose parallel method based on OS
+if (.Platform$OS.type == "windows") {
+  # Windows version
+  cl <- makePSOCKcluster(num_cores)
+  clusterExport(cl, c("r1", "functions_list"))
+  clusterEvalQ(cl, {library(terra); library(geodiv)})
+  
+  results_list_ornl <- parLapply(cl, functions_list, function(func) {
+    metric_fun <- get(func, envir = asNamespace("geodiv"))
+    if (func == "sdc") {
+      value <- metric_fun(r1, low = 0, high = 0.05)
+    } else {
+      value <- metric_fun(r1)
+    }
+    list(func = func, value = value)
+  })
+  
+  stopCluster(cl)
+} else {
+  # Unix version (original)
+  results_list_ornl <- mclapply(functions_list, function(func) {
+    metric_fun <- get(func, envir = asNamespace("geodiv"))
+    if (func == "sdc") {
+      value <- metric_fun(r1, low = 0, high = 0.05)
+    } else {
+      value <- metric_fun(r1)
+    }
+    list(func = func, value = value)
+  }, mc.cores = num_cores)
+}
+
+
+
 #ORNL -----
 mosaic_path_ornl <- ("~/Documents/GitHub/geodiversity_2025/processed_tifs/ORNL_2018_DEM_mosaic_20250925.tif")
 r1 <- rast(mosaic_path_ornl)
