@@ -28,10 +28,10 @@ library(neonUtilities)
 # -----------------------------------
 
 # today's date
-date <- "20251015"
+date <- "20251020"
 
 # directory to save "raw" neon data to (working in github)
-save.directory <- "C:/Users/kylad/Documents/GitHub/geodiversity_2025/NEON_data/"
+save.directory <- "C:/Users/courtney/Documents/GitHub/geodiversity_2025/NEON_data/"
 
 # Site Code and Year
 site <- "RMNP" 
@@ -46,7 +46,7 @@ save.directory <- paste0(save.directory, site, "/")
 epsg <- 32613
 
 # what is the approx centroid of where you want data from (in lat/lon)
-lon <- -105.54596
+lon <- -105.5175188
 lat <- 40.27590
 
 # turn that lat/lon into a sf object for R (with lat/lon epsg)
@@ -284,7 +284,7 @@ ggdraw(tiles_map2) +
 # Step 5: Take a look in GEE to pick the 4 points you want
 #------
 
-st_write(tile_points2, paste0(save.directory, "/", site,  "_9points.shp"), 
+st_write(tile_points2, paste0(save.directory, "/", site,  "_9points2_2.shp"), 
          driver = "ESRI Shapefile")
 # open in GEE
 
