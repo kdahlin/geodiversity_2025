@@ -1,16 +1,18 @@
-install.packages("cowplot")
-library(terra)
+## Get NEON data
+
+# Title: Get NEON Lidar DEM
+# Date: 09/24/2025
+# Author: KMD adapted from TRG
+# For entering a geographic location and getting the names of the four closest
+# NEON tiles, then downloading to this rproject folder
+
+#load packages 
+
 library(sf)
-library(geodiv)
-library(ggplot2)
+library(tidyverse)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(maps)
 library(cowplot)
-
-mosaic.dem <- "C:\\Users\\courtney\\Documents\\GitHub\\geodiversity_2025\\processed_tifs\\RMNP_2020_DEM_mosaic_20251005.tif"
-r1 <- rast(mosaic.dem)
-plot(r1)
-
-metrics <- terrain(r1)
-plot(metrics)
-
-aspect <- terrain(r1, v = "aspect")
-plot(aspect)
+library(terra)
+library(neonUtilities)
