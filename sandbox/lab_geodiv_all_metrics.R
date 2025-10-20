@@ -2,25 +2,14 @@
 library(terra)
 library(geodiv)
 library(parallel)
+library(parallelly)
 library(snow)
+library(dplyr)
+library(tidyr)
+library(purrr)
 
-#get operating system info
-os <-.Platform$OS.type
-print(os)
-
-#if on windows, load snow package for parallel processing, otherwise use mclapply
-if (os == "windows") {
-  library(snow)
-  cl <- makeCluster(detectCores() - 1) #leave one core free
-  clusterEvalQ(cl, {
-    library(terra)
-    library(geodiv)
-  })
-  clusterExport(cl, varlist = c("mosaic_path_ornl", "mosaic_path_rmnp", "mosaic_path_cper", "mosaic_path_wood", "functions_list"))
-  mc.cores <- cl
-} else {
-  mc.cores <- detectCores() - 1 #leave one core free
-}
+#Set a working directory
+setwd("/Users/leobaldiga/Documents/GitHub/geodiversity_2025") #Change this to the location of your own geodiv folder
 
 #create results directory if it doesn't exist
 if (!dir.exists("results")) {
@@ -33,106 +22,79 @@ functions_list <- (c("sa", "sq", "s10z", "sdq", "sdq6",
                      "svi","stxr","ssc","sv","sph","sk",
                      "smean","spk","svk", "scl", "sdc"))
 
-#ORNL -----
-mosaic_path_ornl <- ("~/Documents/GitHub/geodiversity_2025/processed_tifs/ORNL_2018_DEM_mosaic_20250925.tif")
-r1 <- rast(mosaic_path_ornl)
+#Define location codes
+locations <- c("ORNL",
+               "RMNP",
+               "CPER",
+               "WOOD")
 
-results_list_ornl <- list()
-results_list_ornl <- mclapply(functions_list, function(func) {
-  metric_fun <- get(func, envir = asNamespace("geodiv"))
-  if (func == "sdc") {
-    value <- metric_fun(r1, low = 0, high = 0.05)
-  } else {
-    value <- metric_fun(r1)
-  }
-  list(func = func, value = value)
-}, mc.cores = 10)
+#Define folder locations of tifs
+tifs <- c("processed_tifs/ORNL_2018_DEM_mosaic_20250925.tif",
+          "processed_tifs/RMNP_2020_DEM_mosaic_20251005.tif",
+          "processed_tifs/CPER_2020_DEM_mosaic_20251005.tif",
+          "processed_tifs/WOOD_2020_DEM_mosaic_20251005.tif")
 
-# turn results list into a dataframe 
-results_df_ornl <- data.frame(
-  func = sapply(results_list_ornl, function(x) x$func),
-  value = I(lapply(results_list_ornl, function(x) x$value))
-)
-print(results_df_ornl)
+#robust detect cores available, won't result in 0 or negative
+num_cores <- parallelly::availableCores(omit = 2)
 
-#save results table to csv
-write.csv(results_df_ornl, "results/ornl_geodiversity_metrics.csv", row.names = F)
+# Define worker task: compute all metrics for one TIFF
+compute_metrics_for_tif <- function(filepath, funcs) {
+  library(terra)
+  library(geodiv)
+  r <- rast(filepath)
+  
+  res_list <- lapply(funcs, function(f) {
+    metric_fun <- get(f, envir = asNamespace("geodiv"))
+    if (f == "sdc") {
+      val <- metric_fun(r, low = 0, high = 0.05)
+    } else {
+      val <- metric_fun(r)
+    }
+    list(func = f, value = val)
+  })
+  
+  # Combine metrics for this raster
+  data.frame(
+    file = basename(filepath),
+    func = sapply(res_list, `[[`, "func"),
+    value = I(lapply(res_list, `[[`, "value"))
+  )
+}
 
-#RMNP -----
-mosaic_path_rmnp <- ("~/Documents/GitHub/geodiversity_2025/processed_tifs/RMNP_2020_DEM_mosaic_20251005.tif")
-r2 <- rast(mosaic_path_rmnp)
+# --- Cross‑platform run ---
+if (.Platform$OS.type == "windows") {
+  cl <- makePSOCKcluster(num_cores)
+  clusterExport(cl, c("tifs", "functions_list", "compute_metrics_for_tif"))
+  clusterEvalQ(cl, { library(terra); library(geodiv) })
+  
+  results_all <- parLapply(cl, tifs, compute_metrics_for_tif, funcs = functions_list)
+  stopCluster(cl)
+  
+} else {
+  # Unix uses forking (faster)
+  results_all <- mclapply(tifs, compute_metrics_for_tif, funcs = functions_list,
+                          mc.cores = num_cores)
+}
 
-results_list_rmnp <- list()
-results_list_rmnp <- mclapply(functions_list, function(func) {
-  metric_fun <- get(func, envir = asNamespace("geodiv"))
-  if (func == "sdc") {
-    value <- metric_fun(r2, low = 0, high = 0.05)
-  } else {
-    value <- metric_fun(r2)
-  }
-  list(func = func, value = value)
-}, mc.cores = 10)
+# Bind all results together
+results_df <- do.call(rbind, results_all)
 
-# turn results list into a dataframe 
-results_df_rnmp <- data.frame(
-  func = sapply(results_list_rmnp, function(x) x$func),
-  value = I(lapply(results_list_rmnp, function(x) x$value))
-)
+# Expand list-column 'value' into multiple columns
+expanded_df <- results_df %>%
+  mutate(value = map(value, as.numeric)) %>%  # ensure numeric vectors
+  unnest_wider(value, names_sep = "_val_")   # split multi-values into separate columns
 
-print(results_df_rnmp)
+# Pivot wider by 'func' so each metric is row, columns are file + value part
+wide_df <- expanded_df %>%
+  pivot_wider(
+    id_cols = func,
+    names_from = file,
+    values_from = starts_with("value"),
+    names_glue = "{file}_{.value}"
+  )
 
-#save results table to csv
-write.csv(results_df_rnmp, "results/rmnp_geodiversity_metrics.csv", row.names = F)
+# Save to CSV
+write.csv(wide_df, "sandbox/results/all_geodiversity_metrics_expanded.csv", row.names = FALSE)
+print(wide_df)
 
-#CPER -----
-mosaic_path_cper <- ("~/Documents/GitHub/geodiversity_2025/processed_tifs/CPER_2020_DEM_mosaic_20251005.tif")
-r3 <- rast(mosaic_path_cper)
-
-results_list_cper <- list()
-results_list_cper <- mclapply(functions_list, function(func) {
-  metric_fun <- get(func, envir = asNamespace("geodiv"))
-  if (func == "sdc") {
-    value <- metric_fun(r3, low = 0, high = 0.05)
-  } else {
-    value <- metric_fun(r3)
-  }
-  list(func = func, value = value)
-}, mc.cores = 10)
-
-# turn results list into a dataframe 
-results_df_cper <- data.frame(
-  func = sapply(results_list_cper, function(x) x$func),
-  value = I(lapply(results_list_cper, function(x) x$value))
-)
-
-print(results_df_cper)
-
-#save results table to csv
-write.csv(results_df_cper, "results/cper_geodiversity_metrics.csv", row.names = F)
-
-# WOOD -----
-mosaic_path_wood <- ("~/Documents/GitHub/geodiversity_2025/processed_tifs/WOOD_2020_DEM_mosaic_20251005.tif")
-r4 <- rast(mosaic_path_wood)
-
-results_list_wood <- list()
-results_list_wood <- mclapply(functions_list, function(func) {
-  metric_fun <- get(func, envir = asNamespace("geodiv"))
-  if (func == "sdc") {
-    value <- metric_fun(r4, low = 0, high = 0.05)
-  } else {
-    value <- metric_fun(r4)
-  }
-  list(func = func, value = value)
-}, mc.cores = 10)
-
-# turn results list into a dataframe 
-results_df_wood <- data.frame(
-  func = sapply(results_list_wood, function(x) x$func),
-  value = I(lapply(results_list_wood, function(x) x$value))
-)
-
-print(results_df_wood)
-
-#save results table to csv
-write.csv(results_df_wood, "results/wood_geodiversity_metrics.csv", row.names = F)
-# DONE -----
+#DONE -----
