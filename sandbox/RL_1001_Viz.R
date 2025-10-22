@@ -10,18 +10,28 @@ library(rasterVis)
 
 setwd("C://Users/rache/Documents/geodiversity_2025/sandbox/")
 
-ORNL <- "C://Users/rache/Documents/geodiversity_2025/processed_tifs/ORNL_2018_DEM_mosaic_20250925.tif"
+ORNL <- "C://Users/rache/Documents/geodiversity_2025/geodiversity_2025/processed_tifs/ORNL_2018_DEM_mosaic_20250925.tif"
 CPER <- "C://Users/rache/Documents/geodiversity_2025/processed_tifs/CPER_2020_DEM_mosaic_20251005.tif"
 RMNP <- "C://Users/rache/Documents/geodiversity_2025/processed_tifs/RMNP_2020_DEM_mosaic_20251005.tif"
 WOOD <- "C://Users/rache/Documents/geodiversity_2025/processed_tifs/WOOD_2020_DEM_mosaic_20251005.tif"
 
 r1<-rast(ORNL)
 plot(r1)
+summary(r1)
+min <- global(r1, fun = "min", na.rm = TRUE)
+min
+max <- global(r1, fun = "max", na.rm = TRUE)
+max
 
-ORNL_slope <- terrain(r1, v="slope")
-ORNL_aspect <- terrain(r1, v="aspect")
+ORNL_slope <- terrain(r1, v = "slope", neighbors = 8, unit = "degrees")
 plot(ORNL_slope)
+mean_slope <- global(ORNL_slope, fun = "mean", na.rm = TRUE)
+mean_slope
+
+ORNL_aspect <- terrain(r1, v="aspect", v = "aspect", neighbors = 8, unit = "radians")
 plot(ORNL_aspect)
+mean_aspect <- global(ORNL_aspect, fun = "mean", na.rm = TRUE)
+mean_aspect
 
 r2<-rast(RMNP)
 plot(r2)
