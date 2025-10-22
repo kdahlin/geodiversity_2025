@@ -5,7 +5,7 @@ library(sf)
 library(terra)
 
 #Only part that should change between runs
-sitename = "RMNP"
+sitename = "CPER"
 year = "2020" #Year of data acquisition, not current year
 
 
@@ -13,7 +13,7 @@ date = toString(Sys.Date())
 
 NEON.path <- paste0("./NEON_data/",sitename,"/")
 
-dem.files <- list.files(NEON.path, pattern = "DSM.tif$", recursive = TRUE)
+dem.files <- list.files(NEON.path, pattern = "DTM.tif$", recursive = TRUE)
 
 bli = 33 #Index of the tile that forms the bottom left of the mosaic (bottom-left index)
 
