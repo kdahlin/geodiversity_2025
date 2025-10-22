@@ -51,6 +51,8 @@ plot(r3)
 plot(r4)
 plot(r5)
 
+################ spatialEco ##############
+
 #NOT geodiv package- trying to measure curvature using spatialEco package
 # step 1 install package
 install.packages("spatialEco")
@@ -70,15 +72,45 @@ total_curv<-curvature(elev,type="total")  #total/sum curvature
 
 # step 4 plot
 
-plot(profile_curv,main="CPER Profile curvature")
-plot(planform_curv,main="CPER Plan curvature")
-plot(total_curv,main="CPER total curvature")
+plot(profile_curv,main="ORNL Profile curvature")
+plot(planform_curv,main="ORNL Plan curvature")
+plot(total_curv,main="ORNL total curvature")
+
+print(total_curv)
+
+########### change scale of the curvature ? ##########3
+
+class(r4)
+
+library(raster)
+w <- matrix(1, 3, 3)
+ornl <- focal(elev, w = w, fun = mean, na.rm = TRUE)
+
+# calculate curvature w specific scale
+curvature_result <- curvature(ornl, scale = 3)  # Example: scale = 3?????
+
+# step 2 load DEM
+elev<-rast("C:/Users/Emma/871/geodiversity_2025/processed_tifs/ORNL_2018_DEM_mosaic_20250925.tif")
+
+# step 3 calculate curvature types
+
+profile_curv<-curvature(elev,type="profile")  #profile curvature
+
+planform_curv<-curvature(elev,type="planform") # plan curvature
+
+total_curv<-curvature(elev,type="total")  #total/sum curvature
+
+# step 4 plot
+
+plot(profile_curv,main="ORNL Profile curvature")
+plot(planform_curv,main="ORNL Plan curvature")
+plot(total_curv,main="ORNL total curvature")
 
 print(total_curv)
 
 
 
-#Repeat!!!!!!!!!!!!!!!!!! Rocky mountain for maybe some more variation...
+############### Repeat! ########### Rocky mountain for maybe some more variation...
 # step 2 load DEM
 elevrm<-rast("C:/Users/Emma/871/geodiversity_2025/processed_tifs/RMNP_2020_DEM_mosaic_20251005.tif")
 
@@ -100,7 +132,7 @@ print(total_curvrm)
 
 
 
-
+######### geodiv metrics ###############
 
 #average roughness of the surface
 roughness <- sa(r4)
@@ -112,9 +144,11 @@ rtmean
 tenpoint <- s10z(r4)
 tenpoint
 
+#2 point slope
 rms2pt <- sdq(r4)
 rms2pt
 
+#7 point slope
 rms7pt <- sdq6(r4)
 rms7pt
 
@@ -138,19 +172,22 @@ corrlength
 redvaldepth <- svk(r4)
 redvaldepth
 
+#reduced peak height
 redpk <- spk(r4)
 redpk
 
+#mean peak height
 meanpkht <- smean(r4)
 meanpkht
 
+#core roughness depth
 coreroughnessdepth <- sk(r4)
 coreroughnessdepth
 
+#maximum peak height
 maxpeakh <- sph(r4)
 maxpeakh
 
-valleydep
 
 metrics<-terrain(r1)
 plot(metrics)
@@ -159,4 +196,18 @@ help(terrain)
 aspect<-terrain(r1, v="aspect")
 plot(aspect)
 
-library(geodiv)
+
+################ New Comparisons - SpatialEco vs Geodiv ###############
+library(spatialEco)
+
+#Raster entropy
+rEnt <- raster.entropy(r1, d=3, categorical = FALSE, global = TRUE)
+opar <- par(no.readonly=TRUE)
+par(mfcol=c(2,1))
+
+plot(rEnt, limits=c(2.1962, 2.1974))
+par(opar)summary(rEnt)
+rEnt
+mean_rEnt <- global(rEnt, fun="mean", na.rm=TRUE)
+mean_rEnt
+
