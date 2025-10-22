@@ -1,66 +1,3 @@
-install.packages("cowplot")
-library(terra)
-library(sf)
-library(geodiv)
-library(ggplot2)
-library(cowplot)
-
-#get path to mosaic ORNL, STRIPEY
-
-mosaic.dem <- "C:\\Users\\courtney\\Documents\\GitHub\\geodiversity_2025\\processed_tifs\\ORNL_2018_DEM_mosaic_20250925.tif"
-r1 <- rast(mosaic.dem)
-plot(r1)
-r1plot <- plot(r1)
-
-metrics <- terrain(r1)
-plot(metrics)
-metricsplot <- plot(metrics)
-
-aspect <- terrain(r1, v = "aspect")
-plot(aspect)
-aspectplot <- plot(aspect)
-
-plot_grid(r1plot, metricsplot, aspectplot, legend, ncol = 4, rel_widths = c(1, 1, 1, 0.3))
-
-#get path to mosaic WOOD, LUMPY
-
-mosaic.dem <- "C:\\Users\\courtney\\Documents\\GitHub\\geodiversity_2025\\processed_tifs\\WOOD_2020_DEM_mosaic_20251005.tif"
-r1 <- rast(mosaic.dem)
-plot(r1)
-
-metrics <- terrain(r1)
-plot(metrics)
-
-aspect <- terrain(r1, v = "aspect")
-plot(aspect)
-
-#get path to mosaic RMNP, HIGH RELIEF
-
-mosaic.dem <- "C:\\Users\\courtney\\Documents\\GitHub\\geodiversity_2025\\processed_tifs\\RMNP_2020_DEM_mosaic_20251005.tif"
-r1 <- rast(mosaic.dem)
-plot(r1)
-
-metrics <- terrain(r1)
-plot(metrics)
-
-aspect <- terrain(r1, v = "aspect")
-plot(aspect)
-
-slope <- terrain(r1, v = "slope")
-plot(slope)
-
-#get path to mosaic CPER, FLAT
-
-mosaic.dem <- "C:\\Users\\courtney\\Documents\\GitHub\\geodiversity_2025\\processed_tifs\\CPER_2020_DEM_mosaic_20251005.tif"
-r1 <- rast(mosaic.dem)
-plot(r1)
-
-metrics <- terrain(r1)
-plot(metrics)
-
-aspect <- terrain(r1, v = "aspect")
-plot(aspect)
-
 ## Get NEON data
 
 # Title: Get NEON Lidar DEM
@@ -91,7 +28,7 @@ library(neonUtilities)
 # -----------------------------------
 
 # today's date
-date <- "20251005"
+date <- "20251020"
 
 # directory to save "raw" neon data to (working in github)
 save.directory <- "C:/Users/courtney/Documents/GitHub/geodiversity_2025/NEON_data/"
@@ -109,7 +46,7 @@ save.directory <- paste0(save.directory, site, "/")
 epsg <- 32613
 
 # what is the approx centroid of where you want data from (in lat/lon)
-lon <- -105.54596
+lon <- -105.5175188
 lat <- 40.27590
 
 # turn that lat/lon into a sf object for R (with lat/lon epsg)
@@ -289,6 +226,8 @@ ggdraw(tiles_map) +
 # Step 4 (Optional): Select adjoining tiles 
 #------
 # run function
+# need a list of 6 northings and eastings
+#each 1000m apart of eachother
 adjoin_neon_tiles <- function(coords, kmbuffer = 1) {
   # coords: data.frame with columns "easting" and "northing"
   # kmbuffer: number of km outward to extend in all directions
@@ -331,7 +270,7 @@ tile_points2 <- st_as_sf(tile_coords_new,
 # create map of adjoining tiles for verification
 tiles_map2 <- ggplot(data = states_utm) +
   geom_sf() +
-  geom_sf(data = states_utm, fill = NA)+
+  #geom_sf(data = states_utm, fill = NA)+
   geom_sf(data = tile_points2, size = 3, shape = 24, fill = "blue")+
   geom_sf(data = tile_points, size = 3, shape = 24, fill = "lightgreen")+
   coord_sf(xlim = c(eastmin, eastmax), ylim = c(northmin, northmax), crs = epsg, datum = epsg) +
@@ -345,13 +284,14 @@ ggdraw(tiles_map2) +
 # Step 5: Take a look in GEE to pick the 4 points you want
 #------
 
-st_write(tile_points2, paste0(save.directory, "/", site,  "_9points.shp"), 
+st_write(tile_points2, paste0(save.directory, "/", site,  "_9points2_2.shp"), 
          driver = "ESRI Shapefile")
 # open in GEE
 
 # select which coordinates you want to keep (remember you only want the lower
 # left corner of each tile)
-tile_coords <- tile_coords_new[c(2,3,5,6), ]
+## need to download 36 more 'points' 
+tile_coords <- grid
 
 #------
 # Step 6: Get data from NEON!
@@ -378,6 +318,7 @@ NEON.path <- paste0("C:/Users/courtney/Documents/GitHub/geodiversity_2025/NEON_d
                     "FullSite/D10/2020_RMNP_3/L3/DiscreteLidar/DTMGtif/")
 
 dem.files <- list.files(NEON.path)
+#draw out the tiles to ensure pulling right four, visual help!
 
 tile1 <- rast(paste0(NEON.path, dem.files[2]))
 tile2 <- rast(paste0(NEON.path, dem.files[3]))
@@ -398,3 +339,16 @@ writeRaster(mosaic.dem, out.mosaic.name,
 # -----
 # all done!
 # -----
+
+<<<<<<< HEAD
+=======
+
+############# new ideas ####################
+# figure out the max and min eastings and northings you want
+east_seq <- seq(east_min, east_max, by = 1000)
+north_seq <- seq(north_min, north_max, by = 1000)
+
+grid <- expand.grid(easting = east_seq,
+                    northing = north_seq)
+
+>>>>>>> 1b728accd754cf8ad1de04af14ede6b1c156fda1
