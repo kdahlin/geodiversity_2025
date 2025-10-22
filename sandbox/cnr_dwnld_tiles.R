@@ -35,7 +35,7 @@ save.directory <- "C:/Users/courtney/Documents/GitHub/geodiversity_2025/NEON_dat
 
 # Site Code and Year
 site <- "WOOD" 
-year <- "2020"  
+year <- "2019"  
 siteyear <- paste0(site, "/", year, "/")
 
 # make a directory for the data you eventually download
