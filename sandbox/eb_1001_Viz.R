@@ -36,7 +36,7 @@ eviTheme <- rasterTheme(region=eviCols)
 mosaic_dem<- "C:/Users/Emma/871/geodiversity_2025/processed_tifs/ORNL_2018_DEM_mosaic_20250925.tif"
 cper_dem<- "C:/Users/Emma/871/geodiversity_2025/processed_tifs/CPER_2020_DEM_mosaic_20251005.tif" #data that courtney loaded
 wood_dem<- "C:/Users/Emma/871/geodiversity_2025/processed_tifs/WOOD_2020_DEM_mosaic_20251005.tif"
-ornl_dem<- "C:/Users/Emma/871/geodiversity_2025/processed_tifs/ORNL_2018_DEM_mosaic_20250925.tif"
+ornl_dem<- "C:/Users/Emma/871/geodiversity_2025/processed_tifs/ORNL/ORNL_2018_DEM_mosaic_20250925.tif"
 rmnp_dem<- "C:/Users/Emma/871/geodiversity_2025/processed_tifs/RMNP_2020_DEM_mosaic_20251005.tif"
 
 r1<-rast(mosaic_dem)
@@ -50,6 +50,28 @@ plot(r2)
 plot(r3)
 plot(r4)
 plot(r5)
+
+ORNL_slope <- terrain(r4, v="slope")
+ORNL_aspect <- terrain(r4, v="aspect")
+plot(ORNL_slope)
+plot(ORNL_aspect)
+ORNL_aspect
+mean_aspect <- global(ORNL_aspect, fun="mean", na.rm=TRUE)
+mean_aspect
+
+##Correct northness aspect
+ORNL_aspect2<-cos(terrain(r4, v = "aspect", neighbors = 8, unit = "radians"))
+plot(ORNL_aspect2)
+ORNL_aspect2
+mean_aspect2 <- global(ORNL_aspect2, fun="mean", na.rm=TRUE)
+mean_aspect2
+
+##Correct eastness aspect
+ORNL_aspect2e<-sin(terrain(r4, v = "aspect", neighbors = 8, unit = "radians"))
+plot(ORNL_aspect2e)
+ORNL_aspect2e
+mean_aspect2e <- global(ORNL_aspect2e, fun="mean", na.rm=TRUE)
+mean_aspect2e
 
 ################ spatialEco ##############
 
