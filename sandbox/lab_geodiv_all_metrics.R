@@ -6,7 +6,6 @@ library(parallelly)
 library(snow)
 library(dplyr)
 library(tidyr)
-library(purrr)
 library(moments)
 library(spatialEco)
 
@@ -26,13 +25,13 @@ functions_list <- (c("sa", "sq", "s10z", "sdq", "sdq6", #geodiv
                      "curvature", "tpi", "tri", "vrm",  # Spatial Eco fns "
                      "sar", "raster.entropy"))
 
-#Define location codes (subdirectory names)
+#Define NEON site location codes (subdirectory names)
 locations <- c("ORNL",
                "RMNP",
                "CPER",
                "WOOD")
 
-#iterate over each location as a subdirectory to get tifs
+#iterate over each NEON site  as a subdir of processed_tifs to get tif files
 tifs <- c()
 for (loc in locations) {
   dir_path <- file.path("processed_tifs", loc)
@@ -83,8 +82,9 @@ run_one_task <- function(task) {
 
 num_cores <- parallelly::availableCores(omit = 2)
 
-# Wrap the parallel call with required libraries loaded
-if (.Platform$OS.type == "windows") {
+# Parallel execution - this may take a while, depending on how many files! 
+# Go get lunch, or take a nap while it runs. 
+if (.Platform$OS.type == "windows") { #windows version uses PSOCKcluster, no forking
   cl <- makePSOCKcluster(num_cores)
   clusterExport(cl, c("tasks", "run_one_task"))
   clusterEvalQ(cl, {
@@ -100,7 +100,7 @@ if (.Platform$OS.type == "windows") {
     run_one_task(tasks[i, ])
   })
   stopCluster(cl)
-} else { #unix version
+} else { #unix version uses mclapply, forking internally
   results_list <- mclapply(seq_len(nrow(tasks)), function(i) {
     library(terra)
     library(geodiv)
@@ -113,7 +113,11 @@ if (.Platform$OS.type == "windows") {
 print(results_list)
 #print only values from the results list
 results_all <- lapply(results_list, function(df) {
-  data.frame(file = df$file, func = df$func, value = df$value[[1]])
+  data.frame(
+    file = df$file,
+    func = df$func,
+    value = unlist(df$value)  # unlist expands vectors into separate rows
+  )
 })
 
 # Bind all results together
@@ -126,17 +130,20 @@ expanded_df <- results_df %>%
   mutate(value = map(value, as.numeric)) %>%  # ensure numeric vectors
   unnest_wider(value, names_sep = "_val_")   # split multi-values into separate columns
 
-# Pivot wider by 'func' so each metric is row, columns are file + value part
-wide_df <- expanded_df %>%
+expanded_df_unique <- expanded_df %>%
+  group_by(func, file) %>%
+  mutate(row_id = row_number()) %>%
+  ungroup()
+
+wide_df <- expanded_df_unique %>%
   pivot_wider(
     id_cols = func,
-    names_from = file,
-    values_from = starts_with("value"),
-    names_glue = "{file}_{.value}"
+    names_from = c(file, row_id),
+    values_from = starts_with("value")
   )
 
 # Save to CSV
 write.csv(wide_df, "sandbox/results/all_geodiversity_metrics_expanded.csv", row.names = FALSE)
 print(wide_df)
 
-#DONE -----
+#DONE! -----

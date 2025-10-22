@@ -16,7 +16,7 @@ library(parallel)
 library(rgl)
 library(MultiscaleDTM)
 
-mosaic_path <- ("~/Documents/GitHub/geodiversity_2025/processed_tifs/ORNL_2018_DEM_mosaic_20250925.tif")
+mosaic_path <- ("~/Documents/GitHub/geodiversity_2025/processed_tifs/ORNL/ORNL_2018_DEM_mosaic_20250925.tif")
 
 #ORNL ANALYSIS (OAK RIDGE NATIONAL LAB) ----------------------------------------
 
