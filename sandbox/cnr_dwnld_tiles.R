@@ -34,7 +34,7 @@ date <- "20251022"
 save.directory <- "C:/Users/courtney/Documents/GitHub/geodiversity_2025/NEON_data/"
 
 # Site Code and Year
-site <- "CPER" 
+site <- "WOOD" 
 year <- "2020"  
 siteyear <- paste0(site, "/", year, "/")
 
@@ -45,10 +45,10 @@ save.directory <- paste0(save.directory, site, "/")
 # define EPSG code of your spatial data UTM zone (change for new location!)
 
 #WOOD
-#epsg <- 32614
+epsg <- 32614
 
 #CPER
-epsg <- 32613
+#epsg <- 32613
 
 #RMNP
 #epsg <- 32613
@@ -61,12 +61,12 @@ epsg <- 32613
 # what is the approx centroid of where you want data from (in lat/lon)
 
 #WOOD
-#lon <- -84.3261184
-#lat <- 35.9337824
+lon <- -99.26
+lat <- 47.12
 
 #CPER
-lon <- -104.74559
-lat <- 40.81554
+#lon <- -104.74559
+#lat <- 40.81554
 
 #RMNP
 #lon <- -105.5171737
@@ -311,7 +311,7 @@ ggdraw(tiles_map2) +
 # Step 5: Take a look in GEE to pick the 4 points you want
 #------
 
-st_write(tile_points2, paste0(save.directory, "/", site,  "_9points2.shp"), 
+st_write(tile_points2, paste0(save.directory, "/", site,  "_49points26.shp"), 
          driver = "ESRI Shapefile")
 # open in GEE
 
