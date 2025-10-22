@@ -5,7 +5,7 @@ library(sf)
 library(terra)
 
 #Only part that should change between runs
-sitename = "CPER"
+sitename = "WOOD"
 year = "2020" #Year of data acquisition, not current year
 
 
