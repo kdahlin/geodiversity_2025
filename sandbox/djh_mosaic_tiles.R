@@ -13,7 +13,7 @@ date = toString(Sys.Date())
 
 NEON.path <- paste0("./NEON_data/",sitename,"/")
 
-dem.files <- list.files(NEON.path, pattern = "DSM.tif$", recursive = TRUE)
+dem.files <- list.files(NEON.path, pattern = "DTM.tif$", recursive = TRUE)
 
 #Index of the tile that forms the bottom left of the mosaic (bottom-left index)
 for (bli in c(1,3,5,15,17,19,29,31,33)){
