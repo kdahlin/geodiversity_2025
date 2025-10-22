@@ -190,13 +190,21 @@ ggplot() +
   theme_minimal()
 
 #Calculating roughness via adjusted standard deviation
-adjsd1<-AdjSD(r1, include_scale=TRUE)
-plot(adjsd1)
+DTM_adjsd1<-AdjSD(r1, include_scale=TRUE)
+mean_adjsd1 <- global(DTM_adjsd1, fun = "mean", na.rm = TRUE)
+mean_adjsd1
+plot(DTM_adjsd1)
+
+#Roughness Index-Elevation
+DTM_RoughnessIndexEle<-RIE(r1, include_scale=TRUE)
+mean_rie<- global(DTM_RoughnessIndexEle, fun = "mean", na.rm = TRUE)
+mean_rie
+plot(DTM_RoughnessIndexEle)
 
 ######################SpatialEco###########################
 library(spatialEco)
 
-SpaEco_curv<-curvature(r1, type="profile")  #profile curvature from SpaEco package
+SpaEco_curv<-curvature(r1, type=c("profile", "planform", "total"))  #profile curvature from SpaEco package
 summary(values(SpaEco_curv))
 
 #SpaEco_curv_clip <- clamp(SpaEco_curv, lower=-0.01, upper=0.01) #set lower and upper limit/ remove outliers
@@ -225,7 +233,44 @@ mean_tpi
 
 #terrain ruggedness
 SpaEco_tri <- tri(r1, s = 3, exact = TRUE)
+mean_tri <- global(SpaEco_tri, fun = "mean", na.rm = TRUE)
+mean_tri
 plot(SpaEco_tri)
+
+#Vector ruggedness measure
+SpaEco_vrm<-VRM(r1, include_scale=TRUE)
+mean_vrm<- global(SpaEco_vrm, fun = "mean", na.rm = TRUE)
+mean_vrm
+plot(SpaEco_vrm)
+
+#surface area ratio
+SpaEco_sar <- sar(r1, s = NULL, scale = TRUE)
+mean_sar <- global(SpaEco_sar, fun = "mean", na.rm = TRUE)
+mean_sar
+plot(SpaEco_sar)
+
+#Raster entropy
+rEnt <- raster.entropy(r1, d=3, categorical = FALSE, global = TRUE)
+median_rEnt <- global(rEnt, fun=median, na.rm=TRUE)
+median_rEnt
+plot(rEnt, limits=c(2.1962, 2.1973))
+rEnt
+
+#Calculate focal statistics for raster
+library(moments)
+moments_skew <- raster.moments(r1, type = "skewness", s = 3)
+moments_skew
+plot(moments_skew)
+mean_skew <- global(moments_skew, fun = "mean", na.rm = TRUE)
+mean_skew
+
+moments_kurtosis <- raster.moments(r1, type = "kurtosis", s = 3)
+moments_kurtosis
+plot(moments_kurtosis)
+mean_kurtosis <- global(moments_skew, fun = "mean", na.rm = TRUE)
+mean_kurtosis
+
+
 
 ###################Others####################
 
