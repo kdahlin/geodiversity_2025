@@ -34,8 +34,8 @@ date <- "20251022"
 save.directory <- "C:/Users/courtney/Documents/GitHub/geodiversity_2025/NEON_data/"
 
 # Site Code and Year
-site <- "RMNP" 
-year <- "2020"  
+site <- "CPER" 
+year <- "2018"  
 siteyear <- paste0(site, "/", year, "/")
 
 # make a directory for the data you eventually download
@@ -43,11 +43,38 @@ dir.create(paste0(save.directory, site))
 save.directory <- paste0(save.directory, site, "/")
 
 # define EPSG code of your spatial data UTM zone (change for new location!)
+
+#WOOD
+#epsg <- 32614
+
+#CPER
 epsg <- 32613
 
+#RMNP
+#epsg <- 32613
+
+#ORNL
+#epsg <- 32616
+
+
+
 # what is the approx centroid of where you want data from (in lat/lon)
-lon <- -105.5183132
-lat <- 40.2629937
+
+#WOOD
+#lon <- -84.3261184
+#lat <- 35.9337824
+
+#CPER
+lon <- -104.74559
+lat <- 40.81554
+
+#RMNP
+#lon <- -105.5171737
+#lat <- 40.2627492
+
+#ORNL
+#lon <- -84.3261184
+#lat <- 35.9337824
 
 # turn that lat/lon into a sf object for R (with lat/lon epsg)
 centroid <- as.data.frame(matrix(data = c(lat, lon), nrow = 1, ncol = 2))
