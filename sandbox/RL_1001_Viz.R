@@ -157,6 +157,8 @@ ggplot() +
   ) +
   theme_minimal()
 
+grid_sf$ORNL_curvature
+
 ###################MultiscaleDTM####################
 #https://cran.r-project.org/web/packages/MultiscaleDTM/MultiscaleDTM.pdf
 #Calculates multi-scale geomorphometric terrain attributes from regularly gridded digital terrain models using a variable focal windows size
@@ -164,30 +166,26 @@ library(MultiscaleDTM)
 
 #fits a quadratic surface and can be used to calculate slope, aspect, curvatures, and provide a map of discrete landform classes
 #default 3x3 window
-#11x11 window
 qfit1<-Qfit(r1, w=3, metrics =c('profc'), slope_tolerance = 2, force_center=TRUE, include_scale=TRUE, na.rm=TRUE)
-plot(qfit1)
-
 profc <- qfit1$profc_3x3
 summary(profc)
 plot(profc)
 
-# Convert grid_sf to terra vector
-grid_vect <- vect(grid_sf)
+grid_vect <- vect(grid_sf) # Convert grid_sf to terra vector
 
-# Extract meanc for each polygon directly
+# Extract profc for each polygon directly
 # This computes the mean of all raster cells inside each polygon
-vals <- terra::extract(qfit2$meanc_11x11, grid_vect, fun = mean, na.rm = TRUE)
+vals_dtm <- terra::extract(qfit1$profc_3x3, grid_vect, fun = mean, na.rm = TRUE)
 
 # Attach to grid_sf
-grid_sf$meanc <- vals[,2] 
+grid_sf$profc.dtm <- vals_dtm[,2] 
 
 ggplot() +
-  geom_sf(data = grid_sf, aes(fill = meanc), color = "black", linewidth = 0.3) +
-  scale_fill_viridis_c(option = "plasma", na.value = "grey90") +
+  geom_sf(data = grid_sf, aes(fill = profc.dtm), color = "black", linewidth = 0.3) +
+  scale_fill_viridis_c(option = "plasma", limits = c(-0.005, 0.005)) +
   labs(
-    title = "Local Mean Curvature (aggregated by 11×11 grid)",
-    fill = "Mean curvature"
+    title = "Profile Curvature using MultiScaleDTM Package",
+    fill = "Profile curvature"
   ) +
   theme_minimal()
 
@@ -195,23 +193,39 @@ ggplot() +
 adjsd1<-AdjSD(r1, include_scale=TRUE)
 plot(adjsd1)
 
-# calculate metrics (ORNL) for for each grid
-for (i in seq_len(nrow(grid_sf))) {
-  sub_r <- crop(r1, vect(grid_sf[i, ]))
-  mat <- as.matrix(sub_r, wide = TRUE)
-  grid_sf$ORNL_profc_multiDTM[i] <- MultiscaleDTM::Qfit(mat)
-}
-
 ######################SpatialEco###########################
 library(spatialEco)
 
 SpaEco_curv<-curvature(r1, type="profile")  #profile curvature from SpaEco package
 summary(values(SpaEco_curv))
 
-SpaEco_curv_clip <- clamp(SpaEco_curv, lower=-0.01, upper=0.01)
-plot(SpaEco_curv_clip, zlim=c(-0.01, 0.01))
+#SpaEco_curv_clip <- clamp(SpaEco_curv, lower=-0.01, upper=0.01) #set lower and upper limit/ remove outliers
+#plot(SpaEco_curv_clip, zlim=c(-0.01, 0.01))
+# Extract profc for each polygon directly
+vals_spaeco <- terra::extract(SpaEco_curv, grid_vect, fun = mean, na.rm = TRUE)
 
+# Attach to grid_sf
+grid_sf$profc.spaeco <- vals_spaeco[,2] 
 
+#plot
+ggplot() +
+  geom_sf(data = grid_sf, aes(fill = profc.spaeco), color = "black", linewidth = 0.3) +
+  scale_fill_viridis_c(option = "plasma", limits = c(-0.005, 0.005)) +
+  labs(
+    title = "Profile Curvature using SpatialEco Package",
+    fill = "Profile curvature"
+  ) +
+  theme_minimal()
+
+#topographic position
+SpaEco_tpi <- tpi(r1, scale = 3, win = "rectangle", normalize = FALSE, zero.correct = FALSE)
+plot(SpaEco_tpi)
+mean_tpi <- global(SpaEco_tpi, fun = "mean", na.rm = TRUE)
+mean_tpi
+
+#terrain ruggedness
+SpaEco_tri <- tri(r1, s = 3, exact = TRUE)
+plot(SpaEco_tri)
 
 ###################Others####################
 
