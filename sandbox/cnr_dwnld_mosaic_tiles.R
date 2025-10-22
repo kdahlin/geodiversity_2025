@@ -28,7 +28,7 @@ library(neonUtilities)
 # -----------------------------------
 
 # today's date
-date <- "20251020"
+date <- "20251022"
 
 # directory to save "raw" neon data to (working in github)
 save.directory <- "C:/Users/courtney/Documents/GitHub/geodiversity_2025/NEON_data/"
@@ -46,8 +46,8 @@ save.directory <- paste0(save.directory, site, "/")
 epsg <- 32613
 
 # what is the approx centroid of where you want data from (in lat/lon)
-lon <- -105.5175188
-lat <- 40.27590
+lon <- -105.5183132
+lat <- 40.2629937
 
 # turn that lat/lon into a sf object for R (with lat/lon epsg)
 centroid <- as.data.frame(matrix(data = c(lat, lon), nrow = 1, ncol = 2))
@@ -226,8 +226,9 @@ ggdraw(tiles_map) +
 # Step 4 (Optional): Select adjoining tiles 
 #------
 # run function
-# need a list of 6 northings and eastings
-#each 1000m apart of eachother
+## need a list of 6 northings and eastings
+## each 1000m apart of eachother
+
 adjoin_neon_tiles <- function(coords, kmbuffer = 1) {
   # coords: data.frame with columns "easting" and "northing"
   # kmbuffer: number of km outward to extend in all directions
@@ -284,7 +285,7 @@ ggdraw(tiles_map2) +
 # Step 5: Take a look in GEE to pick the 4 points you want
 #------
 
-st_write(tile_points2, paste0(save.directory, "/", site,  "_9points2_2.shp"), 
+st_write(tile_points2, paste0(save.directory, "/", site,  "_9points2.shp"), 
          driver = "ESRI Shapefile")
 # open in GEE
 
