@@ -28,11 +28,16 @@ locations <- c("ORNL",
                "CPER",
                "WOOD")
 
-#Define folder locations of tifs
-tifs <- c("processed_tifs/ORNL_2018_DEM_mosaic_20250925.tif",
-          "processed_tifs/RMNP_2020_DEM_mosaic_20251005.tif",
-          "processed_tifs/CPER_2020_DEM_mosaic_20251005.tif",
-          "processed_tifs/WOOD_2020_DEM_mosaic_20251005.tif")
+#Define folder locations of tifs and get all tifs in those folders
+tifs <- c("processed_tifs/ORNL",
+          "processed_tifs/RMNP",
+          "processed_tifs/CPER",
+          "processed_tifs/WOOD")
+
+# Get all TIFF files from the directories
+tifs <- unlist(lapply(tifs, function(dir) {
+  list.files(path = dir, pattern = "\\.tif$", full.names = TRUE)
+}))
 
 #robust detect cores available, won't result in 0 or negative
 num_cores <- parallelly::availableCores(omit = 2)
@@ -47,6 +52,8 @@ compute_metrics_for_tif <- function(filepath, funcs) {
     metric_fun <- get(f, envir = asNamespace("geodiv"))
     if (f == "sdc") {
       val <- metric_fun(r, low = 0, high = 0.05)
+    } else if ( f == "scl") {
+      val <- metric_fun(r, threshold = 0.2)
     } else {
       val <- metric_fun(r)
     }

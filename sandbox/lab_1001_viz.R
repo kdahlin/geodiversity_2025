@@ -1,12 +1,20 @@
 #Leo Baldiga
 #geodiversity testing methods
 
+#install MultiscaleDTM and disable rgl if issues arise
+#install.packages("MultiscaleDTM")
+#install.packages("rgl", configure.args="--disable-opengl") 
+#this Resolves weird GPU OpenGL problem on apple silicon machines, but no 3d Rendering
+
+#LOAD LIBRARIES ---------------------------------------------------------------
 library(terra)
 library(geodiv)
 library(sf)
 library(tidyverse)
 library(viridis)
 library(parallel)
+library(rgl)
+library(MultiscaleDTM)
 
 mosaic_path <- ("~/Documents/GitHub/geodiversity_2025/processed_tifs/ORNL_2018_DEM_mosaic_20250925.tif")
 
@@ -359,6 +367,105 @@ coordinates(centroid_sp) <- ~x+y
 proj4string(centroid_sp) <- CRS("+proj=utm +zone=13 +datum=WGS84 +units=m +no_defs")
 centroid_latlong <- spTransform(centroid_sp, CRS("+proj=longlat +datum=WGS84"))
 centroid_latlong
+
+
+###################MultiscaleDTM####################
+#https://cran.r-project.org/web/packages/MultiscaleDTM/MultiscaleDTM.pdf
+#Calculates multi-scale geomorphometric terrain attributes from regularly gridded digital terrain models using a variable focal windows size
+library(MultiscaleDTM)
+
+# create 11x11 grid over raster extent
+grid_sf <- st_make_grid(
+  st_as_sfc(st_bbox(r1)),   # convert raster extent to sf geometry
+  n = c(11, 11),             # 11x11 grid
+  what = "polygons"
+) |> st_as_sf()            # return as sf object
+st_crs(grid_sf) <- st_crs(r1) #coord system
+
+#fits a quadratic surface and can be used to calculate slope, aspect, curvatures, and provide a map of discrete landform classes
+#default 3x3 window
+#11x11 window
+qfit1<-Qfit(r1, w=3, metrics =c('profc'), slope_tolerance = 2, force_center=TRUE, include_scale=TRUE, na.rm=TRUE)
+plot(qfit1)
+
+profc <- qfit1$profc_3x3
+summary(profc)
+plot(profc)
+
+# Convert grid_sf to terra vector
+grid_vect <- vect(grid_sf)
+
+# Extract meanc for each polygon directly
+# This computes the mean of all raster cells inside each polygon
+vals <- terra::extract(qfit1$profc_3x3, grid_vect, fun = mean, na.rm = TRUE)
+
+# Attach to grid_sf
+grid_sf$meanc <- vals[,2] 
+
+ggplot() +
+  geom_sf(data = grid_sf, aes(fill = meanc), color = "black", linewidth = 0.3) +
+  scale_fill_viridis_c(option = "plasma", na.value = "grey90") +
+  labs(
+    title = "Local Mean Curvature (aggregated by 11×11 grid)",
+    fill = "Mean curvature"
+  ) +
+  theme_minimal()
+
+#do it for hexagons instead of the sf grid
+# Convert hexes_sf to terra vector
+hex_vect <- vect(hexes_sf)
+# Extract meanc for each polygon directly
+# This computes the mean of all raster cells inside each polygon
+vals_hex <- terra::extract(qfit1$profc_3x3, hex_vect, fun = mean, na.rm = TRUE)
+
+# Attach to hexes_sf
+hexes_sf$meanc <- vals_hex[,2]
+
+#summarize meanc
+summary(hexes_sf$meanc)
+
+#remove hexes greater than 3 SDs
+sd_meanc <- sd(hexes_sf$meanc, na.rm = TRUE)
+mean_meanc <- mean(hexes_sf$meanc, na.rm = TRUE)
+threshold_upper <- mean_meanc + 1 * sd_meanc
+threshold_lower <- mean_meanc - 1 * sd_meanc
+hexes_sf <- hexes_sf %>%
+  mutate(meanc = ifelse(meanc > threshold_upper | meanc < threshold_lower, NA, meanc))
+
+ggplot() +
+  geom_sf(data = hexes_sf, aes(fill = meanc), color = "black", linewidth = 0.3) +
+  scale_fill_viridis_c(option = "D", na.value = "grey90") +
+  labs(
+    title = "Local Mean Curvature (aggregated by hexagons)",
+    fill = "Mean curvature"
+  ) +
+  theme_minimal()
+
+#Calculating roughness via adjusted standard deviation
+adjsd1<-AdjSD(r1, include_scale=TRUE)
+plot(adjsd1)
+
+vals_adjsd <- terra::extract(adjsd1$AdjSD_3x3, hex_vect, fun = mean, na.rm = TRUE)
+
+# calculate metrics (ORNL) for for each grid
+for (i in seq_len(nrow(grid_sf))) {
+  sub_r <- crop(r1, vect(grid_sf[i, ]))
+  mat <- as.matrix(sub_r, wide = TRUE)
+  grid_sf$ORNL_profc_multiDTM[i] <- MultiscaleDTM::Qfit(mat)
+}
+
+######################SpatialEco###########################
+library(spatialEco)
+
+SpaEco_curv<-curvature(r1, type="profile")  #profile curvature from SpaEco package
+summary(values(SpaEco_curv))
+plot(SpaEco_curv, main="ORNL Profile curvature from SpatialEco package")
+
+SpaEco_curv_clip <- clamp(SpaEco_curv, lower=-0.01, upper=0.01)
+plot(SpaEco_curv_clip, zlim=c(-0.01, 0.01))
+
+
+
 
 
 
