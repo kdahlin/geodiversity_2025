@@ -6,7 +6,7 @@ library(terra)
 
 #Only part that should change between runs
 sitename = "WOOD"
-year = "2020" #Year of data acquisition, not current year
+year = "2019" #Year of data acquisition, not current year
 
 
 date = toString(Sys.Date())

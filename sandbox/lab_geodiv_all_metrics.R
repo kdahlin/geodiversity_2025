@@ -8,9 +8,10 @@ library(dplyr)
 library(tidyr)
 library(moments)
 library(spatialEco)
+library(purrr) #Apparently this holds the map() function
 
 #Set a working directory
-setwd("/Users/leobaldiga/Documents/GitHub/geodiversity_2025") #Change this to the location of your own geodiv folder
+setwd("/Users/hallerdi/Documents/Dillon_Classes/geodiversity_2025") #Change this to the location of your own geodiv folder
 
 #create results directory if it doesn't exist
 if (!dir.exists("results")) {
