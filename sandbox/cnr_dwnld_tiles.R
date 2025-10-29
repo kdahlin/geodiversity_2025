@@ -183,7 +183,7 @@ UTM_coords_df <- list_AOP_Tiles(raw_coords_df, input_crs = epsg)
 # Set buffer (KILOMETERS) to determine how many adjoining tiles to add around
 # the sampled points
 # ex. buffer = 0 fills gaps in the input data but doesn't add a buffer
-# ex. buffer = 3 creates a 3x3km grid and pulls a total of 41 tiles
+# ex. buffer = 3 creates a 3x3km grid and pulls a total of 36 tiles
 buffer = 3
 
 # create a data frame of unique tile eastings and northings 
@@ -309,20 +309,17 @@ tiles_map2 <- ggplot(data = states_utm) +
 ggdraw(tiles_map2) +
   draw_plot(inset, width = 0.3, height = 0.3, x = 0.15, y = 0.05)
 
-#----------------------------------
-# DOWNLOAD PTS TO VISUALIZE IN GEE
-#---------------------------------
+#-----------------------------------------------
+# DOWNLOAD PTS TO VISUALIZE IN GEE (optional)
+#-----------------------------------------------
 
-st_write(tile_points2, paste0(save.directory, "/", site,  "_49points26.shp"), 
-         driver = "ESRI Shapefile")
+# st_write(tile_points2, paste0(save.directory, "/", site,  "_49points.shp"), 
+         # driver = "ESRI Shapefile")
 # open in GEE
 
-# grid the tile coordinates
-tile_coords <- grid
-
-#-------------------------
-# DOWNLOAD DATA FROM NEON
-#-------------------------
+#-----------------------------------------------
+# DOWNLOAD DATA FROM NEON AND SAVE TO DIRECTORY
+#-----------------------------------------------
 for (i in 1:nrow(tile_coords_new)) {
   neonUtilities::byTileAOP(dpID = "DP3.30024.001",
                            site = site,
