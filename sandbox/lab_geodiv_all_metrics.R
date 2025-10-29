@@ -11,7 +11,7 @@ library(spatialEco)
 library(purrr) #Apparently this holds the map() function
 
 #Set a working directory
-setwd("/Users/hallerdi/Documents/Dillon_Classes/geodiversity_2025") #Change this to the location of your own geodiv folder
+setwd("/Users/leobaldiga/Documents/GitHub/geodiversity_2025/") #Change this to the location of your own geodiv folder
 
 #create results directory if it doesn't exist
 if (!dir.exists("results")) {
@@ -24,15 +24,15 @@ functions_list <- (c("sa", "sq", "s10z", "sdq", "sdq6", #geodiv
                      "svi","stxr","ssc","sv","sph","sk",
                      "smean","spk","svk", "scl", "sdc", 
                      "curvature", "tpi", "tri", "vrm",  # Spatial Eco fns "
-                     "sar", "raster.entropy"))
+                     "sar", "raster.entropy", "terrain")) #terrain is from terra package
 
 #Define NEON site location codes (subdirectory names)
-locations <- c("ORNL",
-               "RMNP",
-               "CPER",
-               "WOOD")
+locations <- c("ORNL")#,
+               #"RMNP",
+               #"CPER",
+               #"WOOD")
 
-#iterate over each NEON site  as a subdir of processed_tifs to get tif files
+#iterate over each NEON site as a subdir of processed_tifs to get tif files
 tifs <- c()
 for (loc in locations) {
   dir_path <- file.path("processed_tifs", loc)
@@ -47,7 +47,7 @@ tasks <- expand.grid(file = tifs, func = functions_list, stringsAsFactors = FALS
 run_one_task <- function(task) {
   r <- rast(task$file)
   f <- task$func
-  # dynamic function lookup
+  # dynamic function lookup - checks geodiv first, then spatialEco
   if (exists(f, envir = asNamespace("geodiv"), inherits = FALSE)) {
     metric_fun <- get(f, envir = asNamespace("geodiv"))
   } else if (exists(f, envir = asNamespace("spatialEco"), inherits = FALSE)) {
@@ -56,6 +56,7 @@ run_one_task <- function(task) {
     stop(paste("Function", f, "not found in geodiv or spatialEco"))
   }
   
+  # Handle special cases for function arguments
   val <- tryCatch({
     if (f == "sdc") {
       metric_fun(r, low = 0, high = 0.05)
@@ -69,6 +70,7 @@ run_one_task <- function(task) {
     NA
   })
   
+  # If the result is a raster, aggregate to a single value (global mean)
   if (inherits(val, "SpatRaster")) {
     val <- tryCatch({
       global(val, fun = "mean", na.rm = TRUE)[1,1]
@@ -81,27 +83,42 @@ run_one_task <- function(task) {
   data.frame(file = basename(task$file), func = f, value = I(list(val)))
 }
 
+# Determine number of cores to use, leaving some free for system processes
 num_cores <- parallelly::availableCores(omit = 2)
+print(paste("Using", num_cores, "cores for parallel processing."))
 
 # Parallel execution - this may take a while, depending on how many files! 
 # Go get lunch, or take a nap while it runs. 
-if (.Platform$OS.type == "windows") { #windows version uses PSOCKcluster, no forking
+
+#The execution method differs between Windows and Unix-like systems.
+#windows version uses PSOCKcluster, without forking processes.
+
+#Each worker is a separate R session initialized from scratch, 
+#so you must explicitly export libraries, functions, and variables to the workers.
+
+if (.Platform$OS.type == "windows") { 
   cl <- makePSOCKcluster(num_cores)
-  clusterExport(cl, c("tasks", "run_one_task"))
-  clusterEvalQ(cl, {
+  clusterExport(cl, c("tasks", "run_one_task")) #Export task list and runner function to each worker
+  clusterEvalQ(cl, { #Load libraries on each worker
     library(terra)
     library(geodiv)
     library(spatialEco)
-    library(moments)
+    library(moments) #A dependency of spatialEco
   })
   
-  # parLapply over rows of tasks
-  library(pbapply)  # optional progress bar wrapper
+  # parLapply funcs over rows of tasks
   results_list <- parLapply(cl, seq_len(nrow(tasks)), function(i) {
     run_one_task(tasks[i, ])
   })
   stopCluster(cl)
-} else { #unix version uses mclapply, forking internally
+  
+#The Unix version uses mclapply, forking internally. 
+#This eliminates the need to export variables to and load libraries indivdually 
+#on each worker, because they share a memory environment.
+#This could get weird with clustered systems sharing resources (i.e. a HPC), 
+#but should be fine for local multicore use (one machine with multiple cores).
+  
+} else { 
   results_list <- mclapply(seq_len(nrow(tasks)), function(i) {
     library(terra)
     library(geodiv)
@@ -110,41 +127,47 @@ if (.Platform$OS.type == "windows") { #windows version uses PSOCKcluster, no for
     run_one_task(tasks[i, ])
   }, mc.cores = num_cores)
 }
+# Print results list structure
+str(results_list, max.level = 3)
 
-print(results_list)
-#print only values from the results list
+#convert the list to a data frame
 results_all <- lapply(results_list, function(df) {
   data.frame(
     file = df$file,
     func = df$func,
-    value = unlist(df$value)  # unlist expands vectors into separate rows
+    value = unlist(df$value)  # expands vectors with multiple values to rows 
   )
 })
+print(results_all)
 
 # Bind all results together
 results_df <- do.call(rbind, results_all)
-
 print(results_df)
 
-# Expand list-column 'value' into multiple columns
-expanded_df <- results_df %>%
-  mutate(value = map(value, as.numeric)) %>%  # ensure numeric vectors
-  unnest_wider(value, names_sep = "_val_")   # split multi-values into separate columns
-
-expanded_df_unique <- expanded_df %>%
+# Expand list-column 'value' into multiple rows for vectored outputs with more than one value
+long_df <- results_df %>%
+  mutate(value = map(value, as.numeric)) %>% # split vectored multi-values 
   group_by(func, file) %>%
   mutate(row_id = row_number()) %>%
+  mutate(func = paste0(func, "_", row_id)) %>% 
+  mutate(site = sub("_.*", "", file)) %>%
+  mutate(tile = sub(".*_([0-9]+)\\.tif$", "\\1", file)) %>% #regex, goofy
+  select(-row_id) %>%
   ungroup()
 
-wide_df <- expanded_df_unique %>%
+# Pivot WIDER!
+wide_df <- long_df %>%
   pivot_wider(
     id_cols = func,
-    names_from = c(file, row_id),
-    values_from = starts_with("value")
+    names_from = c(file),
+    values_from = value
   )
 
-# Save to CSV
-write.csv(wide_df, "sandbox/results/all_geodiversity_metrics_expanded.csv", row.names = FALSE)
-print(wide_df)
+# Write to CSV
+write.csv(long_df, "sandbox/results/all_metrics_long.csv", row.names = FALSE)
+view(long_df)
+
+write.csv(wide_df, "sandbox/results/all_metrics_wide.csv", row.names = FALSE)
+view(wide_df)
 
 #DONE! -----
