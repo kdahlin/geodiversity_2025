@@ -8,4 +8,4 @@
 
 #We can gitignore the entire NEON_Data folder so that people can keep the downloaded raw data locally
 #but remove it from the global repo
-NEON_data/
+#NEON_data/
