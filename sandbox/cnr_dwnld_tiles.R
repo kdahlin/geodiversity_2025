@@ -14,9 +14,9 @@ library(cowplot)
 library(terra)
 library(neonUtilities)
 
-# ----------------------------------
-# USER-DEFINED VARIABLES-HARD CODED
-# ----------------------------------
+# --------------------------------------------------
+# USER-DEFINED VARIABLES- should change before runs
+# --------------------------------------------------
 
 # today's date
 date <- "20251022"
