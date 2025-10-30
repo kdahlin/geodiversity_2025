@@ -1,3 +1,5 @@
+#This script fills holes in the mosaic raster by averaging the values of adjacent
+#pixels (Queen's case)
 library(terra)
 library(tools)
 
