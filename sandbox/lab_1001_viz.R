@@ -16,7 +16,7 @@ library(parallel)
 library(rgl)
 library(MultiscaleDTM)
 
-mosaic_path <- ("~/Documents/GitHub/geodiversity_2025/processed_tifs/ORNL/ORNL_2018_DEM_mosaic_20250925.tif")
+mosaic_path <- ("/Users/leobaldiga/Documents/GitHub/geodiversity_2025/processed_tifs/ORNL/ORNL_2018_DEM_mosaic_2025-10-22_1.tif")
 
 #ORNL ANALYSIS (OAK RIDGE NATIONAL LAB) ----------------------------------------
 
@@ -90,47 +90,21 @@ title("Roughness on normalized plane removed raster")
 
 #roughness on plane removed raster
 sa <- sa(r1)
-sa_rem <- sa(r1_rem)
-sa_norm <- sa(normr)
-sa_norm_rem <- sa(normr_rem)
-
 print(sa)
-print(sa_rem)
-print(sa_norm)
-print(sa_norm_rem)
 
 #surface bearing index on plane removed raster
 sbi <- sbi(r1)
-sbi_rem <- sbi(r1_rem)
-sbi_norm <- sbi(normr)
-sbi_norm_rem <- sbi(normr_rem)
-
 print(sbi)
-print(sbi_rem)
-print(sbi_norm)
-print(sbi_norm_rem)
+
 
 #Root Mean Square Roughness on plane removed raster
 sq <- sq(r1)
-sq_rem <- sq(r1_rem)
-sq_norm <- sq(normr)
-sq_norm_rem <- sq(normr_rem)
-
 print(sq)
-print(sq_rem)
-print(sq_norm)
-print(sq_norm_rem)
+
 
 #Reduced Peak Height
 spk <- spk(r1)
-spk_rem <- spk(r1_rem)
-spk_norm <- spk(normr)
-spk_norm_rem <- spk(normr_rem)
-
 print(spk)
-print(spk_rem)
-print(spk_norm)
-print(spk_norm_rem)
 
 #Ten Point Height
 s10z <- s10z(r1)
@@ -175,6 +149,94 @@ print(sfd)
 print(sfd_rem)
 print(sfd_norm)
 print(sfd_norm_rem)
+
+#surface skewness 
+ssk <- ssk(r1)
+print(ssk)
+
+#surface kurtosis
+sku <- sku(r1)
+print(sku)
+
+#from moments package - skewness
+library(moments)
+r1_values <- values(r1)
+r1_skewness <- moments::skewness(r1_values)
+print(r1_skewness)
+
+r1_kurtosis <- moments::kurtosis(r1_values)
+print(r1_kurtosis)
+
+#does the same thing as geodiv!
+
+#multiscale dtm compare with terra terrain functions
+#roughness via adjusted standard deviation
+library(MultiscaleDTM)
+adjsd<-AdjSD(r1, include_scale=TRUE)
+plot(adjsd)
+global(adjsd, fun = 'mean', na.rm = TRUE)
+
+#roughness index-elevation
+ri_elev<-RIE(r1, include_scale=TRUE)
+plot(ri_elev)
+global(ri_elev, fun = 'mean', na.rm = TRUE)
+
+#terra slope
+terr_slope<-terrain(r1, v="slope")
+plot(terr_slope)
+global(terr_slope, fun = 'mean', na.rm = TRUE)
+
+#terra aspect
+terr_aspect<-terrain(r1, v="aspect")
+plot(terr_aspect)
+global(terr_aspect, fun = 'mean', na.rm = TRUE)
+
+#terra northness
+terr_northness<-cos(terrain(r1, v = "aspect", neighbors = 8, unit = "radians"))
+plot(terr_northness)
+global(terr_northness, fun = 'mean', na.rm = TRUE)
+
+#terra eastness
+terr_eastness<-sin(terrain(r1, v = "aspect", neighbors = 8, unit = "radians"))
+plot(terr_eastness)
+global(terr_eastness, fun = 'mean', na.rm = TRUE)
+
+#terra roughness
+terr_rough<-terrain(r1, v="roughness")
+plot(terr_rough)
+global(terr_rough, fun = 'mean', na.rm = TRUE)
+
+#terra tpi
+terr_tpi<-terrain(r1, v="TPI") 
+plot(terr_tpi)
+global(terr_tpi, fun = 'mean', na.rm = TRUE) 
+
+#compare to SpatialEco TPI
+library(spatialEco)
+SpaEco_tpi <- tpi(r1)
+plot(SpaEco_tpi)
+global(SpaEco_tpi, fun = "mean", na.rm = TRUE)
+
+#terra tri
+terr_tri<-terrain(r1, v="TRI")
+range(values(terr_tri), na.rm=TRUE)
+
+#spatialEco tri
+SpaEco_tri <- tri(r1, s = 3, exact = T)
+range(values(SpaEco_tri), na.rm=TRUE)
+
+#plot both side by side
+par(mfrow=c(1,2))
+plot(terr_tri, main="Terra TRI")
+plot(SpaEco_tri, main="SpatialEco TRI")
+
+#terra TRIriley - SAME RESULTS AS SpatialEco TRI
+terr_tririley<-terrain(r1, v="TRIriley")
+range(values(terr_tririley), na.rm=TRUE)
+
+#terra TRIrmsd
+terr_trirmsd<-terrain(r1, v="TRIrmsd")
+range(values(terr_trirmsd), na.rm=TRUE)
 
 
 #RMNP ANALYSIS (ROCKY MOUNTAIN NATIONAL PARK) ----------------------------------
