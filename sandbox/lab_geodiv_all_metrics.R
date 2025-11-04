@@ -19,8 +19,7 @@ if (!dir.exists("results")) {
 }
 
 #Define NEON site location codes (subdirectory names)
-locations <- c("ORNL") #, 
-               #"RMNP", "CPER", "WOOD")
+locations <- c("ORNL", "RMNP", "CPER", "WOOD")
 
 #iterate over each NEON site as a subdir of processed_tifs to get tif files
 tifs <- c()
