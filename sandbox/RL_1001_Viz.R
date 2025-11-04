@@ -5,6 +5,7 @@ library(raster)
 library(mapdata)
 library(ggplot2)
 library(cowplot)
+library(tidyr)
 library(sf)
 library(rasterVis)
 
@@ -295,3 +296,106 @@ system.time(
 print(output_raster)
 rasterVis::levelplot(output_raster[[1]], margin=F, par.settings=eviTheme, 
           ylab=NULL, xlab=NULL, main='Sa')
+
+######Plotting######################
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(cowplot)
+library(tidyr)
+Metrics <- read_csv("results/all_geodiversity_metrics_expanded.csv")
+View(Metrics)
+
+#Pivot data to format for plotting
+Metrics_Long<- Metrics %>%
+  pivot_longer(
+    cols = -func,               # except first row
+    names_to = "Raster",        # new column for raster
+    values_to = "value"         # new column for the metric value
+  ) %>%
+  rename(metrics = func) %>%       # rename func to metrics
+  select(metrics, value, Raster) %>%
+  mutate(raster_id = substr(Raster, 1, 4)) %>%  # add new column with locations, ID first 4 letters in raster
+  drop_na()  #remove NA values
+
+#Boxplot for all
+ggplot(Metrics_Long, aes(x = raster_id, y = value, color = raster_id)) +
+  geom_boxplot(outlier.colour = "black", outlier.size = 1) +
+  geom_dotplot(binaxis = 'y', stackdir = 'center', dotsize = 0.8) +
+  facet_wrap(~ metrics, scales = "free_y") +  # one panel per metric
+  scale_color_manual(values = c("CPER" = "aquamarine4", "ORNL" = "royalblue4", "RMNP"="purple3", "WOOD"="darkorange3"))+
+  theme_minimal() +
+  labs(
+    x = "Raster ID",
+    y = "Value",
+    title = "Metrics Across 4 different surfaces")
+
+#filter data per metrics
+type1 <- Metrics_Long %>%
+  filter(metrics %in% c("s10z", "sdq6", "smean", "sph", "sv", "svk"))
+type2 <- Metrics_Long %>%
+  filter(metrics %in% c("sdc", "sdq", "sk", "spk", "tri", "vrm", "sa", "sq"))
+type3 <- Metrics_Long %>%
+  filter(metrics %in% c("scl", "sku", "srw", "raster.entropy", "stxr"))
+type4 <- Metrics_Long %>%
+  filter(metrics %in% c("sfd", "sci", "svi","tpi"))
+type5 <- Metrics_Long %>%
+  filter(metrics %in% c("sbi", "ssk"))
+type6 <- Metrics_Long %>%
+  filter(metrics %in% c("sdr","curvature", "sds"))
+type7 <- Metrics_Long %>%
+  filter(!metrics %in% c("s10z", "sdq6", "smean", "sph", "sv", "svk",
+                         "sdc", "sdq", "sk", "spk", "tri", "vrm", "sa", "sq",
+                         "scl", "sku", "srw", "raster.entropy", "stxr", 
+                         "sfd", "sci", "svi","tpi",
+                         "sbi", "ssk",
+                         "sdr", "curvature", "sds"))
+
+#Boxplots by types
+ggplot(type7, aes(x = raster_id, y = value, color = raster_id)) +
+  geom_boxplot() +
+  geom_jitter(shape=16, position=position_jitter(0.2)) +
+  facet_wrap(~ metrics, scales = "free_y") +  # one panel per metric
+  theme_minimal() +
+  scale_color_manual(values = c("CPER" = "aquamarine4", "ORNL" = "royalblue4", "RMNP"="purple3", "WOOD"="darkorange3"))+
+  labs(x = "", y = "", title = "Metrics Across 4 different surfaces") +
+  theme(legend.position="none",
+        axis.text = element_text(size=6))
+
+ggsave("Boxplot4.png", width = 13.5 , height = 10 , units = "cm")
+ggsave("Boxplot6.png", width = 13.5 , height = 6 , units = "cm")
+
+#Violin plot for all
+ggplot(Metrics_Long, aes(x = raster_id, y = value, fill = raster_id)) +
+  geom_violin(trim=FALSE, alpha=0.5) +
+  geom_boxplot(width=0.1) +
+  facet_wrap(~ metrics, scales = "free_y") +  # one panel per metric
+  theme_minimal() +
+  scale_fill_manual(values = c("CPER" = "aquamarine4", "ORNL" = "royalblue4", "RMNP"="purple3", "WOOD"="darkorange3"))+
+  labs(
+    x = "Raster ID",
+    y = "Value",
+    title = "Metrics Across 4 different surfaces")
+
+#Beeswarm plot for all
+library(ggbeeswarm)
+ggplot(Metrics_Long, aes(x = raster_id, y = value, color = raster_id)) +
+  geom_beeswarm() +
+  facet_wrap(~ metrics, scales = "free_y") +  # one panel per metric
+  theme_minimal() +
+  scale_color_manual(values = c("CPER" = "aquamarine4", "ORNL" = "royalblue4", "RMNP"="purple3", "WOOD"="darkorange3"))+
+  labs(
+    x = "Raster ID",
+    y = "Value",
+    title = "Metrics Across 4 different surfaces")
+
+
+ggplot(sa, aes(x=raster_id, y=value))+
+  geom_beeswarm() +
+  theme_minimal()
+
+ggplot(sa, aes(x=raster_id, y=value))+
+  geom_violin() +
+  stat_summary(fun.data=sa)
+  theme_minimal()
+
