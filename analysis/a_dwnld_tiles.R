@@ -22,7 +22,7 @@ library(neonUtilities)
 date <- "20251022"
 
 # directory to save "raw" neon data to (working in github)
-save.directory <- "C:/Users/courtney/Documents/GitHub/geodiversity_2025/NEON_data/"
+save.directory <- "./NEON_data/"
 
 # site code and year
 site <- "WOOD" 
@@ -167,7 +167,7 @@ centroid.rpj <- st_transform(centroid.pt, crs = epsg)
 # plot to take a look (would be nice to make a better map here...)
 ggplot(data = centroid.rpj) +
   geom_sf() +
-  geom_sf(data = states_utm, fill = NA) +
+  #geom_sf(data = states_utm, fill = NA) +
   theme_bw()
 
 # create data frame of coordinates
