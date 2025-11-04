@@ -155,13 +155,16 @@ ssk <- ssk(r1)
 print(ssk)
 
 #surface kurtosis
-sku <- sku(r1)
+sku <- sku(r1, excess = F)
 print(sku)
+
+sku_excess <- sku(r1, excess = T)
+print(sku_excess)
 
 #from moments package - skewness
 library(moments)
 r1_values <- values(r1)
-r1_skewness <- moments::skewness(r1_values)
+r1_skewness <- moments::skewness(r1_values, )
 print(r1_skewness)
 
 r1_kurtosis <- moments::kurtosis(r1_values)
@@ -237,6 +240,75 @@ range(values(terr_tririley), na.rm=TRUE)
 #terra TRIrmsd
 terr_trirmsd<-terrain(r1, v="TRIrmsd")
 range(values(terr_trirmsd), na.rm=TRUE)
+
+##----TESTING
+
+library(terra)
+
+locations <- c("ORNL", "RMNP", "CPER", "WOOD")
+
+# Collect all tif files in folders named after locations
+tifs <- c()
+for (loc in locations) {
+  dir_path <- file.path("processed_tifs", loc)
+  tif_files <- list.files(path = dir_path, pattern = "\\.tif$", full.names = TRUE)
+  tifs <- c(tifs, tif_files)
+}
+
+terrain_values <- c("slope", "aspect", "TPI", "TRI", 
+                    "TRIriley", "TRIrmsd", "roughness")
+
+results_list <- list()
+
+for (tif_path in tifs) {
+  r <- rast(tif_path)
+  
+  terrain_results <- terrain(r, v = terrain_values, neighbors = 8)
+  
+  # Convert slope from radians to degrees
+  if ("slope" %in% names(terrain_results)) {
+    terrain_results$slope <- terrain_results$slope * (180 / pi)
+  }
+  
+  # Calculate northness and eastness from aspect
+  if ("aspect" %in% names(terrain_results)) {
+    aspect_rad <- terrain_results$aspect
+    northness <- cos(aspect_rad)
+    eastness <- sin(aspect_rad)
+  } else {
+    northness <- NA
+    eastness <- NA
+  }
+  
+  metrics_means <- c()
+  
+  # slope mean
+  metrics_means["slope"] <- ifelse("slope" %in% names(terrain_results),
+                                   mean(values(terrain_results$slope), na.rm = TRUE), NA)
+  
+  # northness and eastness means
+  metrics_means["northness"] <- ifelse(!all(is.na(northness)),
+                                       mean(values(northness), na.rm = TRUE), NA)
+  metrics_means["eastness"] <- ifelse(!all(is.na(eastness)),
+                                      mean(values(eastness), na.rm = TRUE), NA)
+  
+  # other terrain metrics means
+  other_metrics <- c("TPI", "TRI", "TRIriley", "TRIrmsd", "roughness")
+  for (m in other_metrics) {
+    if (m %in% names(terrain_results)) {
+      metrics_means[m] <- mean(values(terrain_results[[m]]), na.rm = TRUE)
+    } else {
+      metrics_means[m] <- NA
+    }
+  }
+  
+  results_list[[tif_path]] <- metrics_means
+}
+
+results_df <- do.call(cbind, results_list)
+colnames(results_df) <- basename(colnames(results_df))
+
+print(results_df)
 
 
 #RMNP ANALYSIS (ROCKY MOUNTAIN NATIONAL PARK) ----------------------------------

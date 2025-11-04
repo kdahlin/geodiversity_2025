@@ -18,19 +18,9 @@ if (!dir.exists("results")) {
   dir.create("results")
 }
 
-#define list of functions to run from geodiv and spatialEco packages
-functions_list <- (c("sa", "sq", "s10z", "sdq", "sdq6", #geodiv
-                     "sdr", "sbi","sci","ssk","sku","sds","sfd","srw", "std", 
-                     "svi","stxr","ssc","sv","sph","sk",
-                     "smean","spk","svk", "scl", "sdc", 
-                     "curvature", "tpi", "tri", "vrm",  # Spatial Eco fns "
-                     "sar", "raster.entropy", "terrain")) #terrain is from terra package
-
 #Define NEON site location codes (subdirectory names)
-locations <- c("ORNL")#,
-               #"RMNP",
-               #"CPER",
-               #"WOOD")
+locations <- c("ORNL") #, 
+               #"RMNP", "CPER", "WOOD")
 
 #iterate over each NEON site as a subdir of processed_tifs to get tif files
 tifs <- c()
@@ -39,6 +29,15 @@ for (loc in locations) {
   tif_files <- list.files(path = dir_path, pattern = "\\.tif$", full.names = TRUE)
   tifs <- c(tifs, tif_files)
 }
+
+#define list of functions to run from geodiv and spatialEco packages
+functions_list <- (c("sa", "sq", "s10z", "sdq", "sdq6", #geodiv funcs
+                     "sdr", "sbi","sci","ssk","sku","sds","sfd","srw", "std", 
+                     "svi","stxr","ssc","sv","sph","sk",
+                     "smean","spk","svk", "scl", "sdc", 
+                     "curvature", "tpi", "tri", "vrm",  # SpatialEco funcs"
+                     "sar", "raster.entropy", 
+                     "AdjSD", "RIE")) #from MultiscaleDTM
 
 # All combinations of files and functions
 tasks <- expand.grid(file = tifs, func = functions_list, stringsAsFactors = FALSE)
@@ -52,6 +51,8 @@ run_one_task <- function(task) {
     metric_fun <- get(f, envir = asNamespace("geodiv"))
   } else if (exists(f, envir = asNamespace("spatialEco"), inherits = FALSE)) {
     metric_fun <- get(f, envir = asNamespace("spatialEco"))
+  } else if (exists(f, envir = asNamespace("MultiscaleDTM"), inherits = FALSE)) {
+    metric_fun <- get(f, envir = asNamespace("MultiscaleDTM"))
   } else {
     stop(paste("Function", f, "not found in geodiv or spatialEco"))
   }
@@ -104,6 +105,7 @@ if (.Platform$OS.type == "windows") {
     library(geodiv)
     library(spatialEco)
     library(moments) #A dependency of spatialEco
+    library(MultiscaleDTM)
   })
   
   # parLapply funcs over rows of tasks
@@ -124,9 +126,11 @@ if (.Platform$OS.type == "windows") {
     library(geodiv)
     library(spatialEco)
     library(moments)
+    library(MultiscaleDTM)
     run_one_task(tasks[i, ])
   }, mc.cores = num_cores)
 }
+
 # Print results list structure
 str(results_list, max.level = 3)
 
@@ -144,8 +148,96 @@ print(results_all)
 results_df <- do.call(rbind, results_all)
 print(results_df)
 
+#----- Terrain functions from Terra package - run separately -----
+
+#define terrain metrics to compute
+terrain_metrics <- c("slope", "aspect", "TPI", "TRI", 
+                    "TRIriley", "TRIrmsd", "roughness") #for terrain function
+
+# Create all combinations of files and terrain metrics
+terrain_tasks <- expand.grid(file = tifs, metric = terrain_metrics, stringsAsFactors = FALSE)
+
+# Define a task-runner function for terrain metrics
+run_terrain_task <- function(task) {
+  r <- rast(task$file)
+  metric <- task$metric
+  val <- tryCatch({
+    terrain_raster <- terrain(r, v = metric, unit = "degrees", neighbors = 8)
+    global(terrain_raster, fun = "mean", na.rm = TRUE)[1,1]
+  }, error = function(e) {
+    warning(sprintf("Error in terrain '%s' on file '%s': %s", metric, task$file, e$message))
+    NA
+  })
+  data.frame(file = basename(task$file), func = metric, value = val)
+}
+
+run_terrain_task <- function(task) {
+  r <- rast(task$file)
+  metric <- task$metric
+  
+  if (metric == "aspect") {
+    val_northness <- tryCatch({
+      aspect_rad <- terrain(r, v = "aspect", neighbors = 8, unit = "radians")
+      northness <- cos(aspect_rad)
+      global(northness, fun = "mean", na.rm = TRUE)[1,1]
+    }, error = function(e) {
+      warning(sprintf("Error in northness on file '%s': %s", task$file, e$message))
+      NA
+    })
+    val_eastness <- tryCatch({
+      aspect_rad <- terrain(r, v = "aspect", neighbors = 8, unit = "radians")
+      eastness <- sin(aspect_rad)
+      global(eastness, fun = "mean", na.rm = TRUE)[1,1]
+    }, error = function(e) {
+      warning(sprintf("Error in eastness on file '%s': %s", task$file, e$message))
+      NA
+    })
+    data.frame(
+      file = basename(task$file),
+      func = c("northness", "eastness"),
+      value = c(val_northness, val_eastness)
+    )
+  } else {
+    val <- tryCatch({
+      terrain_raster <- terrain(r, v = metric, unit = "degrees", neighbors = 8)
+      global(terrain_raster, fun = "mean", na.rm = TRUE)[1,1]
+    }, error = function(e) {
+      warning(sprintf("Error in terrain '%s' on file '%s': %s", metric, task$file, e$message))
+      NA
+    })
+    data.frame(file = basename(task$file), func = metric, value = val)
+  }
+}
+
+
+# Parallel execution for terrain metrics
+if (.Platform$OS.type == "windows") { 
+  cl <- makePSOCKcluster(num_cores)
+  clusterExport(cl, c("terrain_tasks", "run_terrain_task"))
+  clusterEvalQ(cl, {
+    library(terra)
+  })
+  
+  terrain_results_list <- parLapply(cl, seq_len(nrow(terrain_tasks)), function(i) {
+    run_terrain_task(terrain_tasks[i, ])
+  })
+  stopCluster(cl)
+  
+} else {
+  terrain_results_list <- mclapply(seq_len(nrow(terrain_tasks)), function(i) {
+    library(terra)
+    run_terrain_task(terrain_tasks[i, ])
+  }, mc.cores = num_cores)
+}
+
+# Bind terrain results together
+terrain_results_df <- do.call(rbind, terrain_results_list)
+
+# Combine terrain results with previous results
+all_results_df <- rbind(results_df, terrain_results_df)
+
 # Expand list-column 'value' into multiple rows for vectored outputs with more than one value
-long_df <- results_df %>%
+long_df <- all_results_df %>%
   mutate(value = map(value, as.numeric)) %>% # split vectored multi-values 
   group_by(func, file) %>%
   mutate(row_id = row_number()) %>%
@@ -155,6 +247,9 @@ long_df <- results_df %>%
   select(-row_id) %>%
   ungroup()
 
+#make sure value is unlisted (no list cols)
+long_df$value <- unlist(long_df$value)
+
 # Pivot WIDER!
 wide_df <- long_df %>%
   pivot_wider(
@@ -162,6 +257,8 @@ wide_df <- long_df %>%
     names_from = c(file),
     values_from = value
   )
+
+#----
 
 # Write to CSV
 write.csv(long_df, "sandbox/results/all_metrics_long.csv", row.names = FALSE)
