@@ -48,7 +48,7 @@ resample_and_save <- function(input_tif, site_code, resolutions, base_dir = "pro
     # Compute new resolution in x and y 
     new_res <- c(res, res)
     
-    # Resample raster to new resolution using bilinear interpolation
+    # Resample raster to new resolution using bilinear interpolation (3x3 window)
     r_resampled <- resample(r, rast(ext(r), resolution=new_res, crs=crs(r)), method = "bilinear")
     
     # Create output directory if it doesn't exist
@@ -58,7 +58,8 @@ resample_and_save <- function(input_tif, site_code, resolutions, base_dir = "pro
     }
     
     # Define output file path
-    out_file <- file.path(out_dir, basename(input_tif))
+    file_base <- sub("\\.tif$", "", basename(input_tif), ignore.case = TRUE)
+    out_file <- file.path(out_dir, paste0(file_base, "_", res, "m.tif"))
     
     # Write resampled raster
     writeRaster(r_resampled, filename = out_file, overwrite = TRUE)
