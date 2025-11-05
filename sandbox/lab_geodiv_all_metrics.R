@@ -11,7 +11,8 @@ library(spatialEco)
 library(purrr) #Apparently this holds the map() function
 
 #Set a working directory
-setwd("/Users/leobaldiga/Documents/GitHub/geodiversity_2025/") #Change this to the location of your own geodiv folder
+setwd("/Users/leobaldiga/Documents/GitHub/geodiversity_2025/") 
+#Change this to the location of your own geodiv folder
 
 #create results directory if it doesn't exist
 if (!dir.exists("results")) {
@@ -155,20 +156,6 @@ terrain_metrics <- c("slope", "aspect", "TPI", "TRI",
 
 # Create all combinations of files and terrain metrics
 terrain_tasks <- expand.grid(file = tifs, metric = terrain_metrics, stringsAsFactors = FALSE)
-
-# Define a task-runner function for terrain metrics
-run_terrain_task <- function(task) {
-  r <- rast(task$file)
-  metric <- task$metric
-  val <- tryCatch({
-    terrain_raster <- terrain(r, v = metric, unit = "degrees", neighbors = 8)
-    global(terrain_raster, fun = "mean", na.rm = TRUE)[1,1]
-  }, error = function(e) {
-    warning(sprintf("Error in terrain '%s' on file '%s': %s", metric, task$file, e$message))
-    NA
-  })
-  data.frame(file = basename(task$file), func = metric, value = val)
-}
 
 run_terrain_task <- function(task) {
   r <- rast(task$file)
