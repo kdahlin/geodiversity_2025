@@ -222,14 +222,15 @@ terrain_results_df <- do.call(rbind, terrain_results_list)
 # Combine terrain results with previous results
 all_results_df <- rbind(results_df, terrain_results_df)
 
-# Expand list-column 'value' into multiple rows for vectored outputs with more than one value
+# Reshape data to LONG format first
 long_df <- all_results_df %>%
-  mutate(value = map(value, as.numeric)) %>% # split vectored multi-values 
+  unnest(value) %>%                              
+  mutate(value = as.numeric(value)) %>%          
   group_by(func, file) %>%
-  mutate(row_id = row_number()) %>%
-  mutate(func = paste0(func, "_", row_id)) %>% 
-  mutate(site = sub("_.*", "", file)) %>%
-  mutate(tile = sub(".*_([0-9]+)\\.tif$", "\\1", file)) %>% #regex, goofy
+  mutate(row_id = row_number(),
+         func = paste0(func, "_", row_id),
+         site = sub("_.*", "", file),
+         tile = sub(".*_([0-9]+)\\.tif$", "\\1", file)) %>%
   select(-row_id) %>%
   ungroup()
 
