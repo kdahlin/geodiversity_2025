@@ -1,3 +1,12 @@
+# Batch compute geodiversity metrics across multiple NEON sites and DEM tiles
+# This script processes all DEM tiles in the 'processed_tifs' directory for 
+# specified NEON sites, computing a suite of geodiversity metrics using
+# functions from the 'geodiv', 'spatialEco', and 'MultiscaleDTM' packages.
+# Results are saved in both long and wide CSV formats for further analysis.
+
+#Author: LAB
+#Date: 11/05/2025
+
 #load libraries
 library(terra)
 library(geodiv)
@@ -8,21 +17,21 @@ library(dplyr)
 library(tidyr)
 library(moments)
 library(spatialEco)
-library(purrr) #Apparently this holds the map() function
+library(MultiscaleDTM)
 
 #Set a working directory
 setwd("/Users/leobaldiga/Documents/GitHub/geodiversity_2025/") 
 #Change this to the location of your own geodiv folder
 
-#create results directory if it doesn't exist
+#create a results directory if it doesn't exist
 if (!dir.exists("results")) {
   dir.create("results")
 }
 
-#Define NEON site location codes (subdirectory names)
+#Define NEON site location codes (processed_tifs/subdirectory names)
 locations <- c("ORNL", "RMNP", "CPER", "WOOD")
 
-#iterate over each NEON site as a subdir of processed_tifs to get tif files
+#iterate over each NEON site code as a subdirectory of processed_tifs to get tif files
 tifs <- c()
 for (loc in locations) {
   dir_path <- file.path("processed_tifs", loc)
@@ -31,22 +40,26 @@ for (loc in locations) {
 }
 
 #define list of functions to run from geodiv and spatialEco packages
-functions_list <- (c("sa", "sq", "s10z", "sdq", "sdq6", #geodiv funcs
-                     "sdr", "sbi","sci","ssk","sku","sds","sfd","srw", "std", 
-                     "svi","stxr","ssc","sv","sph","sk",
-                     "smean","spk","svk", "scl", "sdc", 
-                     "curvature", "tpi", "tri", "vrm",  # SpatialEco funcs"
+functions_list <- (c("sa", "sq", "s10z", "sdq", "sdq6", #geodiv functions
+                     "sdr", "sbi","sci","ssk","sku","sds", "sfd","srw", "std", 
+                     "svi","stxr","ssc","sv","sph","sk","smean","spk","svk", "scl", "sdc", 
+                     "curvature", "tpi", "tri", "vrm",  # SpatialEco functions"
                      "sar", "raster.entropy", 
-                     "AdjSD", "RIE")) #from MultiscaleDTM
+                     "AdjSD", "RIE")) #MultiscaleDTM functions
 
-# All combinations of files and functions
+# Define tasks: All combinations of files and functions
 tasks <- expand.grid(file = tifs, func = functions_list, stringsAsFactors = FALSE)
 
-# Define a task-runner function
+#--------------------------
+# DEFINE A TASK RUNNER FUNCTION
+#--------------------------
+
 run_one_task <- function(task) {
   r <- rast(task$file)
   f <- task$func
-  # dynamic function lookup - checks geodiv first, then spatialEco
+  
+  # Dynamic function lookup:
+  # This checks the geodiv namespace first, then spatialEco, then MultiscaleDTM
   if (exists(f, envir = asNamespace("geodiv"), inherits = FALSE)) {
     metric_fun <- get(f, envir = asNamespace("geodiv"))
   } else if (exists(f, envir = asNamespace("spatialEco"), inherits = FALSE)) {
@@ -57,7 +70,7 @@ run_one_task <- function(task) {
     stop(paste("Function", f, "not found in geodiv or spatialEco"))
   }
   
-  # Handle special cases for function arguments
+  # Handle special cases for function arguments that require default values
   val <- tryCatch({
     if (f == "sdc") {
       metric_fun(r, low = 0, high = 0.05)
@@ -71,7 +84,7 @@ run_one_task <- function(task) {
     NA
   })
   
-  # If the result is a raster, aggregate to a single value (global mean)
+  # If the result is a raster, aggregate to a single value by taking global mean
   if (inherits(val, "SpatRaster")) {
     val <- tryCatch({
       global(val, fun = "mean", na.rm = TRUE)[1,1]
@@ -84,18 +97,28 @@ run_one_task <- function(task) {
   data.frame(file = basename(task$file), func = f, value = I(list(val)))
 }
 
+#--------------------------
+# PARALLEL PROCESSING SETUP
+#--------------------------
+
 # Determine number of cores to use, leaving some free for system processes
-num_cores <- parallelly::availableCores(omit = 2)
+# parallelly::availableCores is better than parallel:: detectCores() for this purpose, 
+# it won't result in 0 on a single-core machine
+num_cores <- parallelly::availableCores(omit = 2) 
 print(paste("Using", num_cores, "cores for parallel processing."))
+
+#--------------------------
+# RUN TASKS IN PARALLEL
+#--------------------------
 
 # Parallel execution - this may take a while, depending on how many files! 
 # Go get lunch, or take a nap while it runs. 
 
-#The execution method differs between Windows and Unix-like systems.
-#windows version uses PSOCKcluster, without forking processes.
+# The execution method differs between Windows and Unix-like systems.
 
-#Each worker is a separate R session initialized from scratch, 
-#so you must explicitly export libraries, functions, and variables to the workers.
+# The Windows version uses PSOCKcluster, and parLapply without forking processes.
+# Each worker is a separate R session initialized from scratch, 
+# so you must explicitly export libraries, functions, and variables to the workers.
 
 if (.Platform$OS.type == "windows") { 
   cl <- makePSOCKcluster(num_cores)
@@ -122,7 +145,7 @@ if (.Platform$OS.type == "windows") {
   
 } else { 
   results_list <- mclapply(seq_len(nrow(tasks)), function(i) {
-    library(terra)
+    library(terra) #load libraries inside shared memory space
     library(geodiv)
     library(spatialEco)
     library(moments)
@@ -148,19 +171,23 @@ print(results_all)
 results_df <- do.call(rbind, results_all)
 print(results_df)
 
-#----- Terrain functions from Terra package - run separately -----
+#--------------------------
+# TERRAIN METRICS - TERRA PACKAGE
+#--------------------------
 
-#define terrain metrics to compute
+# Define terrain metrics to compute
 terrain_metrics <- c("slope", "aspect", "TPI", "TRI", 
                     "TRIriley", "TRIrmsd", "roughness") #for terrain function
 
 # Create all combinations of files and terrain metrics
 terrain_tasks <- expand.grid(file = tifs, metric = terrain_metrics, stringsAsFactors = FALSE)
 
+# Define a task runner function for terrain metrics
 run_terrain_task <- function(task) {
   r <- rast(task$file)
   metric <- task$metric
   
+  # Special handling for aspect to compute northness and eastness (sin/cos)
   if (metric == "aspect") {
     val_northness <- tryCatch({
       aspect_rad <- terrain(r, v = "aspect", neighbors = 8, unit = "radians")
@@ -184,6 +211,7 @@ run_terrain_task <- function(task) {
       value = c(val_northness, val_eastness)
     )
   } else {
+    # For other terrain metrics, compute normally
     val <- tryCatch({
       terrain_raster <- terrain(r, v = metric, unit = "degrees", neighbors = 8)
       global(terrain_raster, fun = "mean", na.rm = TRUE)[1,1]
@@ -195,6 +223,9 @@ run_terrain_task <- function(task) {
   }
 }
 
+#--------------------------
+# RUN TERRAIN TASKS IN PARALLEL
+#--------------------------
 
 # Parallel execution for terrain metrics
 if (.Platform$OS.type == "windows") { 
@@ -219,12 +250,16 @@ if (.Platform$OS.type == "windows") {
 # Bind terrain results together
 terrain_results_df <- do.call(rbind, terrain_results_list)
 
+#--------------------------
+# COMBINE AND RESHAPE RESULTS
+#--------------------------
+
 # Combine terrain results with previous results
 all_results_df <- rbind(results_df, terrain_results_df)
 
 # Reshape data to LONG format first
 long_df <- all_results_df %>%
-  unnest(value) %>%                              
+  unnest(value) %>%   
   mutate(value = as.numeric(value)) %>%          
   group_by(func, file) %>%
   mutate(row_id = row_number(),
@@ -245,7 +280,9 @@ wide_df <- long_df %>%
     values_from = value
   )
 
-#----
+#--------------------------
+# SAVE RESULTS
+#--------------------------
 
 # Write to CSV
 write.csv(long_df, "sandbox/results/all_metrics_long.csv", row.names = FALSE)
