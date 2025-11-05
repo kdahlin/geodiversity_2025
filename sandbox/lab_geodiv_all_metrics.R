@@ -1,7 +1,7 @@
 # Batch compute geodiversity metrics across multiple NEON sites and DEM tiles
 # This script processes all DEM tiles in the 'processed_tifs' directory for 
 # specified NEON sites, computing a suite of geodiversity metrics using
-# functions from the 'geodiv', 'spatialEco', and 'MultiscaleDTM' packages.
+# functions from the 'geodiv', 'spatialEco', 'MultiscaleDTM', and 'terra' packages.
 # Results are saved in both long and wide CSV formats for further analysis.
 
 #Author: LAB
@@ -19,17 +19,24 @@ library(moments)
 library(spatialEco)
 library(MultiscaleDTM)
 
+### ONLY MODIFY THE FOLLOWING SECTION AS NEEDED ### ------
+
 #Set a working directory
 setwd("/Users/leobaldiga/Documents/GitHub/geodiversity_2025/") 
 #Change this to the location of your own geodiv folder
+
+#Define NEON site location codes (processed_tifs/subdirectory names)
+locations <- c("ORNL", "RMNP", "CPER", "WOOD")
+################################################################## 
+
+#--------------------------
+# DATA AND TASK PREPARATION 
+#--------------------------
 
 #create a results directory if it doesn't exist
 if (!dir.exists("results")) {
   dir.create("results")
 }
-
-#Define NEON site location codes (processed_tifs/subdirectory names)
-locations <- c("ORNL", "RMNP", "CPER", "WOOD")
 
 #iterate over each NEON site code as a subdirectory of processed_tifs to get tif files
 tifs <- c()
@@ -50,9 +57,9 @@ functions_list <- (c("sa", "sq", "s10z", "sdq", "sdq6", #geodiv functions
 # Define tasks: All combinations of files and functions
 tasks <- expand.grid(file = tifs, func = functions_list, stringsAsFactors = FALSE)
 
-#--------------------------
+#------------------------------
 # DEFINE A TASK RUNNER FUNCTION
-#--------------------------
+#------------------------------
 
 run_one_task <- function(task) {
   r <- rast(task$file)
