@@ -19,7 +19,7 @@ library(neonUtilities)
 # --------------------------------------------------
 
 # today's date
-date <- "20251022"
+date <- "20251105"
 
 # directory to save "raw" neon data to (working in github)
 save.directory <- "./NEON_data/"
@@ -27,7 +27,6 @@ save.directory <- "./NEON_data/"
 # site code and year
 site <- "WOOD" 
 year <- "2019"  
-siteyear <- paste0(site, "/", year, "/")
 
 # make a directory for the data you eventually download
 dir.create(paste0(save.directory, site))
@@ -183,7 +182,7 @@ UTM_coords_df <- list_AOP_Tiles(raw_coords_df, input_crs = epsg)
 # Set buffer (KILOMETERS) to determine how many adjoining tiles to add around
 # the sampled points
 # ex. buffer = 0 fills gaps in the input data but doesn't add a buffer
-# ex. buffer = 3 creates a 3x3km grid and pulls a total of 36 tiles
+# ex. buffer = 3 creates a 7x7km grid and pulls a total of 49 tiles
 buffer = 3
 
 # create a data frame of unique tile eastings and northings 
@@ -199,7 +198,7 @@ tile_points <- st_as_sf(tile_coords,
                         crs = epsg) 
 
 #----------
-# PLOT PTS
+# PLOT Point
 #----------
 
 # load basemap 
