@@ -303,11 +303,12 @@ library(dplyr)
 library(ggplot2)
 library(cowplot)
 library(tidyr)
-Metrics <- read_csv("results/all_geodiversity_metrics_expanded.csv")
+Metrics <- read_csv("results/all_metrics_wide.csv")
 View(Metrics)
 
 #Pivot data to format for plotting
 Metrics_Long<- Metrics %>%
+  mutate(func = gsub("_.*", "", func)) %>%  # remove anything after the first "_" from func column
   pivot_longer(
     cols = -func,               # except first row
     names_to = "Raster",        # new column for raster
@@ -324,35 +325,39 @@ ggplot(Metrics_Long, aes(x = raster_id, y = value, color = raster_id)) +
   geom_dotplot(binaxis = 'y', stackdir = 'center', dotsize = 0.8) +
   facet_wrap(~ metrics, scales = "free_y") +  # one panel per metric
   scale_color_manual(values = c("CPER" = "aquamarine4", "ORNL" = "royalblue4", "RMNP"="purple3", "WOOD"="darkorange3"))+
+  labs(x = "Raster ID",
+       y = "Value",
+       title = "Metrics Across 4 different surfaces") +
   theme_minimal() +
-  labs(
-    x = "Raster ID",
-    y = "Value",
-    title = "Metrics Across 4 different surfaces")
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major = element_line(color = "grey80"))
+ggsave("BoxplotAll.png", width = 70 , height = 40 , units = "cm", bg = "white")
 
 #filter data per metrics
 type1 <- Metrics_Long %>%
   filter(metrics %in% c("s10z", "sdq6", "smean", "sph", "sv", "svk"))
 type2 <- Metrics_Long %>%
-  filter(metrics %in% c("sdc", "sdq", "sk", "spk", "tri", "vrm", "sa", "sq"))
+  filter(metrics %in% c("AdjSD", "RIE", "roughness", "sdc", "sdq", "sk", "slope", "spk", 
+                        "tri", "TRI", "TRIriley", "TRIrmsd", "vrm", "sa", "sq"))
 type3 <- Metrics_Long %>%
   filter(metrics %in% c("scl", "sku", "srw", "raster.entropy", "stxr"))
 type4 <- Metrics_Long %>%
-  filter(metrics %in% c("sfd", "sci", "svi","tpi"))
+  filter(metrics %in% c("sfd", "sci", "svi","tpi", "TPI"))
 type5 <- Metrics_Long %>%
   filter(metrics %in% c("sbi", "ssk"))
 type6 <- Metrics_Long %>%
-  filter(metrics %in% c("sdr","curvature", "sds"))
+  filter(metrics %in% c("northness", "sdr","curvature", "sds"))
 type7 <- Metrics_Long %>%
   filter(!metrics %in% c("s10z", "sdq6", "smean", "sph", "sv", "svk",
-                         "sdc", "sdq", "sk", "spk", "tri", "vrm", "sa", "sq",
+                         "AdjSD", "RIE", "roughness", "sdc", "sdq", "sk", "slope", "spk", 
+                         "tri", "TRI", "TRIriley", "TRIrmsd", "vrm", "sa", "sq",
                          "scl", "sku", "srw", "raster.entropy", "stxr", 
-                         "sfd", "sci", "svi","tpi",
+                         "sfd", "sci", "svi","tpi", "TPI",
                          "sbi", "ssk",
-                         "sdr", "curvature", "sds"))
+                         "northness", "sdr", "curvature", "sds"))
 
 #Boxplots by types
-ggplot(type7, aes(x = raster_id, y = value, color = raster_id)) +
+ggplot(type6, aes(x = raster_id, y = value, color = raster_id)) +
   geom_boxplot() +
   geom_jitter(shape=16, position=position_jitter(0.2)) +
   facet_wrap(~ metrics, scales = "free_y") +  # one panel per metric
@@ -362,7 +367,7 @@ ggplot(type7, aes(x = raster_id, y = value, color = raster_id)) +
   theme(legend.position="none",
         axis.text = element_text(size=6))
 
-ggsave("Boxplot4.png", width = 13.5 , height = 10 , units = "cm")
+ggsave("Boxplot6.png", width = 13.5 , height = 10 , units = "cm")
 ggsave("Boxplot6.png", width = 13.5 , height = 6 , units = "cm")
 
 #Violin plot for all
@@ -370,18 +375,84 @@ ggplot(Metrics_Long, aes(x = raster_id, y = value, fill = raster_id)) +
   geom_violin(trim=FALSE, alpha=0.5) +
   geom_boxplot(width=0.1) +
   facet_wrap(~ metrics, scales = "free_y") +  # one panel per metric
-  theme_minimal() +
   scale_fill_manual(values = c("CPER" = "aquamarine4", "ORNL" = "royalblue4", "RMNP"="purple3", "WOOD"="darkorange3"))+
-  labs(
-    x = "Raster ID",
-    y = "Value",
-    title = "Metrics Across 4 different surfaces")
+  labs(x = "Raster ID",
+       y = "Value",
+       title = "Metrics Across 4 different surfaces") +
+  theme_minimal() +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major = element_line(color = "grey80"))
+
+ggsave("ViolinAll.png", width = 70 , height = 40 , units = "cm", bg = "white")
 
 #Beeswarm plot for all
 library(ggbeeswarm)
 ggplot(Metrics_Long, aes(x = raster_id, y = value, color = raster_id)) +
   geom_beeswarm() +
   facet_wrap(~ metrics, scales = "free_y") +  # one panel per metric
+  scale_color_manual(values = c("CPER" = "aquamarine4", "ORNL" = "royalblue4", "RMNP"="purple3", "WOOD"="darkorange3"))+
+  labs(x = "Raster ID",
+       y = "Value",
+       title = "Metrics Across 4 different surfaces") +
+  theme_minimal() +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major = element_line(color = "grey80"))
+
+ggsave("BeeswarmAll.png", width = 70 , height = 40 , units = "cm", bg = "white")
+
+#Plot subset for individual types
+#Scale metrics so that can be plotted on the same 0-1 scale
+Metrics_LongScaled <- Metrics_Long %>%
+  group_by(metrics) %>%
+  mutate(value_scaled = (value - min(value)) / (max(value) - min(value))) %>%
+  ungroup()
+
+#Rerun individual types
+#filter data per metrics
+type1 <- Metrics_LongScaled %>%
+  filter(metrics %in% c("s10z", "sdq6", "smean", "sph", "sv", "svk"))
+type2 <- Metrics_LongScaled %>%
+  filter(metrics %in% c("AdjSD", "RIE", "roughness", "sdc", "sdq", "sk", "slope", "spk", 
+                        "tri", "TRI", "TRIriley", "TRIrmsd", "vrm", "sa", "sq"))
+type3 <- Metrics_LongScaled %>%
+  filter(metrics %in% c("scl", "sku", "srw", "raster.entropy", "stxr"))
+type4 <- Metrics_LongScaled %>%
+  filter(metrics %in% c("sfd", "sci", "svi","tpi", "TPI"))
+type5 <- Metrics_LongScaled %>%
+  filter(metrics %in% c("sbi", "ssk"))
+type6 <- Metrics_LongScaled %>%
+  filter(metrics %in% c("northness", "sdr","curvature", "sds"))
+type7 <- Metrics_LongScaled %>%
+  filter(!metrics %in% c("s10z", "sdq6", "smean", "sph", "sv", "svk",
+                         "AdjSD", "RIE", "roughness", "sdc", "sdq", "sk", "slope", "spk", 
+                         "tri", "TRI", "TRIriley", "TRIrmsd", "vrm", "sa", "sq",
+                         "scl", "sku", "srw", "raster.entropy", "stxr", 
+                         "sfd", "sci", "svi","tpi", "TPI",
+                         "sbi", "ssk",
+                         "northness", "sdr", "curvature", "sds"))
+
+#Plot boxplots
+ggplot(type6, aes(x = raster_id, y = value_scaled, color = raster_id)) +
+  geom_boxplot() +
+  theme_minimal() +
+  scale_color_manual(values = c("CPER" = "aquamarine4", "ORNL" = "royalblue4", "RMNP"="purple3", "WOOD"="darkorange3"))+
+  labs(x = "", y = "", title = "Type 6") +
+  theme(legend.position="none", 
+        axis.text = element_text(size=6))
+ggsave("Boxplot_type.png", width = 6 , height = 6 , units = "cm")
+
+#Plot boxplots (with individual metrics)
+ggplot(type1, aes(x = raster_id, y = value_scaled, color = raster_id, fill=metrics)) +
+  geom_boxplot() +
+  theme_minimal() +
+  scale_fill_brewer(palette="Set3") +
+  scale_color_manual(values = c("CPER" = "aquamarine4", "ORNL" = "royalblue4", "RMNP"="purple3", "WOOD"="darkorange3"))+
+  labs(x = "", y = "", title = "Metrics Across 4 different surfaces") +
+  theme(axis.text = element_text(size=6))
+
+#Plot beeswarm
+ggplot(type1, aes(x = raster_id, y = value_scaled, color = raster_id, shape = metrics)) +
+  geom_beeswarm() +
   theme_minimal() +
   scale_color_manual(values = c("CPER" = "aquamarine4", "ORNL" = "royalblue4", "RMNP"="purple3", "WOOD"="darkorange3"))+
   labs(
@@ -389,13 +460,4 @@ ggplot(Metrics_Long, aes(x = raster_id, y = value, color = raster_id)) +
     y = "Value",
     title = "Metrics Across 4 different surfaces")
 
-
-ggplot(sa, aes(x=raster_id, y=value))+
-  geom_beeswarm() +
-  theme_minimal()
-
-ggplot(sa, aes(x=raster_id, y=value))+
-  geom_violin() +
-  stat_summary(fun.data=sa)
-  theme_minimal()
-
+ggsave("BeeswarmAll.png", width = 70 , height = 40 , units = "cm")
