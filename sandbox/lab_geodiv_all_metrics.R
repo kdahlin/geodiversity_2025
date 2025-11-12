@@ -257,22 +257,80 @@ if (.Platform$OS.type == "windows") {
 # Bind terrain results together
 terrain_results_df <- do.call(rbind, terrain_results_list)
 
+#------------------------
+# Run Moments metrics
+#------------------------
+
+# Compute and print moments metrics
+# for each raster file using parallel processing, + range 
+compute_moments <- function(file) {
+  r <- rast(file)
+  vals <- values(r, na.rm = TRUE)
+  mom <- moments(vals)
+  data.frame(
+    file = basename(file),
+    stdv = mom["stdv"],
+    mad = mom["mad"],
+    nmodes = mom["nmodes"],
+    range = max(vals, na.rm = TRUE) - min(vals, na.rm = TRUE)
+  )
+}
+
+# Parallel execution for moments metrics
+if (.Platform$OS.type == "windows") { 
+  cl <- makePSOCKcluster(num_cores)
+  clusterExport(cl, c("tifs", "compute_moments"))
+  clusterEvalQ(cl, {
+    library(terra)
+    library(moments)
+  })
+  
+  moments_results <- parLapply(cl, tifs, function(file) {
+    compute_moments(file)
+  })
+  stopCluster(cl)
+  } else {
+  moments_results <- mclapply(tifs, function(file) {
+    library(terra)
+    library(moments)
+    compute_moments(file)
+  }, mc.cores = num_cores)
+}
+
+# Combine moments results into a single data frame
+moments_results_df <- do.call(rbind, moments_results)
+print(moments_results_df)
+
+#reshape to be file, func, value
+moments_results_df <- moments_results_df %>%
+  pivot_longer(
+    cols = -file,
+    names_to = "func",
+    values_to = "value"
+  )
+
+
 #--------------------------
 # COMBINE AND RESHAPE RESULTS
 #--------------------------
 
 # Combine terrain results with previous results
-all_results_df <- rbind(results_df, terrain_results_df)
+all_results_df <- rbind(results_df, terrain_results_df, moments_results_df)
 
 # Reshape data to LONG format first
-long_df <- all_results_df %>%
+long_df <- terrain_results_df %>%
   unnest(value) %>%   
   mutate(value = as.numeric(value)) %>%          
   group_by(func, file) %>%
-  mutate(row_id = row_number(),
-         func = paste0(func, "_", row_id),
-         site = sub("_.*", "", file),
-         tile = sub(".*_([0-9]+)\\.tif$", "\\1", file)) %>%
+  mutate(
+    row_id = row_number(),
+    func = paste0(func, "_", row_id),
+    site = sub("_.*", "", file),
+    # Extract tile: last number before _Xxm.tif
+    tile = sub(".*_(\\d+)_\\d+m\\.tif$", "\\1", file),
+    # Extract resolution: number before m.tif
+    res  = sub(".*_(\\d+)m\\.tif$", "\\1", file)
+  ) %>%
   select(-row_id) %>%
   ungroup()
 
