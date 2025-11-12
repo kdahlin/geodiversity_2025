@@ -42,7 +42,7 @@ for (i in 1:length(blis)){
   dir.create(paste0("./processed_tifs/", sitename))
   out.mosaic.name <- paste0("./processed_tifs/", sitename, "/",
                             sitename, "_", year, "_DEM_mosaic_",
-                            date, "_", bli, ".tif")
+                            date, "_", bli, "_1m.tif")
   
   writeRaster(mosaic.dem, out.mosaic.name,
               overwrite = FALSE)
