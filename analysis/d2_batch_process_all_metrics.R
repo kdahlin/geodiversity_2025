@@ -51,8 +51,7 @@ functions_list <- (c("sa", "sq", "s10z", "sdq", "sdq6", #geodiv functions
                      "sdr", "sbi","sci","ssk","sku","sds", "sfd","srw", "std", 
                      "svi","stxr","ssc","sv","sph","sk","smean","spk","svk", "scl", "sdc", 
                      "curvature", "tpi", "tri", "vrm",  # SpatialEco functions"
-                     "sar", "raster.entropy", 
-                     "AdjSD", "RIE")) #MultiscaleDTM functions
+                     "sar", "raster.entropy")) 
 
 # Define tasks: All combinations of files and functions
 tasks <- expand.grid(file = tifs, func = functions_list, stringsAsFactors = FALSE)
@@ -71,8 +70,6 @@ run_one_task <- function(task) {
     metric_fun <- get(f, envir = asNamespace("geodiv"))
   } else if (exists(f, envir = asNamespace("spatialEco"), inherits = FALSE)) {
     metric_fun <- get(f, envir = asNamespace("spatialEco"))
-  } else if (exists(f, envir = asNamespace("MultiscaleDTM"), inherits = FALSE)) {
-    metric_fun <- get(f, envir = asNamespace("MultiscaleDTM"))
   } else {
     stop(paste("Function", f, "not found in geodiv or spatialEco"))
   }
@@ -135,7 +132,6 @@ if (.Platform$OS.type == "windows") {
     library(geodiv)
     library(spatialEco)
     library(moments) #A dependency of spatialEco
-    library(MultiscaleDTM)
   })
   
   # parLapply funcs over rows of tasks
@@ -156,7 +152,6 @@ if (.Platform$OS.type == "windows") {
     library(geodiv)
     library(spatialEco)
     library(moments)
-    library(MultiscaleDTM)
     run_one_task(tasks[i, ])
   }, mc.cores = num_cores)
 }
