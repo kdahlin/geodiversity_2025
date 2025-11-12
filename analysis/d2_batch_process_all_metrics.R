@@ -343,10 +343,10 @@ wide_df <- long_df %>%
 #--------------------------
 
 # Write to CSV
-write.csv(long_df, "sandbox/results/all_metrics_long.csv", row.names = FALSE)
+write.csv(long_df, "results/all_metrics_long.csv", row.names = FALSE)
 view(long_df)
 
-write.csv(wide_df, "sandbox/results/all_metrics_wide.csv", row.names = FALSE)
+write.csv(wide_df, "results/all_metrics_wide.csv", row.names = FALSE)
 view(wide_df)
 
 #DONE! -----
