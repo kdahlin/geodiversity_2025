@@ -166,7 +166,7 @@ list_AOP_Tiles <- function(coords, input_crs = 4326) {
 # GENERATE UTM COORDINATES, ESPG CODE, AND NEON TILE COORDINATES
 #----------------------------------------------------------------
 # call the function to list the UTM coordinates and coordinates of all the tiles 
-UTM_coords_df <- list_AOP_Tiles(centroid, input_crs = epsg) 
+UTM_coords_df <- list_AOP_Tiles(centroid) 
 
 #----------------
 # GET NEON TILES
@@ -218,7 +218,8 @@ inset <- ggplot(data = states_utm) +
   geom_sf(fill = "lightblue") +
   geom_sf(data = states_utm, fill = "grey")+
   geom_sf(data = bbox, fill = "red")+
-  coord_sf(xlim = c(eastrefmin, eastrefmax), ylim = c(northrefmin, northrefmax), crs = epsg) +
+  coord_sf(xlim = c(eastrefmin, eastrefmax), ylim = c(northrefmin, northrefmax),
+           crs = epsg) +
   theme(axis.text.x = element_blank(),
         axis.ticks.x = element_blank(),
         axis.text.y = element_blank(),
@@ -229,7 +230,8 @@ tiles_map <- ggplot(data = states_utm) +
   geom_sf() +
   geom_sf(data = states_utm, fill = NA)+
   geom_sf(data = tile_points, size = 3, shape = 24, fill = "lightgreen")+
-  coord_sf(xlim = c(eastmin, eastmax), ylim = c(northmin, northmax), crs = epsg, datum = epsg) +
+  coord_sf(xlim = c(eastmin, eastmax), ylim = c(northmin, northmax), 
+           crs = epsg, datum = epsg) +
   theme_bw()
 
 # combine inset and tile maps together and plot 
@@ -287,7 +289,8 @@ tiles_map2 <- ggplot(data = states_utm) +
   #geom_sf(data = states_utm, fill = NA)+
   geom_sf(data = tile_points2, size = 3, shape = 24, fill = "blue")+
   geom_sf(data = tile_points, size = 3, shape = 24, fill = "lightgreen")+
-  coord_sf(xlim = c(eastmin, eastmax), ylim = c(northmin, northmax), crs = epsg, datum = epsg) +
+  coord_sf(xlim = c(eastmin, eastmax), ylim = c(northmin, northmax), 
+           crs = epsg, datum = epsg) +
   theme_bw()
 
 # combine inset and new tile map together and plot 
