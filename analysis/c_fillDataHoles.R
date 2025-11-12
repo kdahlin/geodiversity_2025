@@ -15,7 +15,7 @@ locations <- c("ORNL",
 tifs <- c()
 for (loc in locations) {
   dir_path <- file.path("processed_tifs", loc)
-  tif_files <- list.files(path = dir_path, pattern = "\\d.tif$", full.names = TRUE)
+  tif_files <- list.files(path = dir_path, pattern = "\\1m.tif$", full.names = TRUE)
   tifs <- c(tifs, tif_files)
 }
 #Iterate over tifs
