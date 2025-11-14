@@ -8,7 +8,7 @@
 
 #We can gitignore the entire NEON_Data folder so that people can keep the downloaded raw data locally
 #but remove it from the global repo
-#NEON_data/
+NEON_data/**/*.tif
 
 #Keeping a QGIS file I use for visualization out of the repo
 expl.qgz
