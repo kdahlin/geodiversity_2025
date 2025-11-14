@@ -22,14 +22,14 @@ options(scipen=999)
 # --------------------------------------------------
 
 # today's date
-date <- "20251105"
+date <- "20251114"
 
 # directory to save "raw" neon data to (working in github)
 save.directory <- "./NEON_data/"
 
 # site code and year
-site <- "WOOD" 
-year <- "2019"  
+site <- "CPER" 
+year <- "2020"  
 
 # make a directory for the data you eventually download
 dir.create(paste0(save.directory, site))
@@ -46,10 +46,10 @@ buffer = 3
 # four NEON sites are listed below
 
 # WOOD
-epsg <- 32614
+#epsg <- 32614
 
 # CPER
-#epsg <- 32613
+epsg <- 32613
 
 # RMNP
 #epsg <- 32613
@@ -61,12 +61,12 @@ epsg <- 32614
 # four NEON sites are listed below
 
 # WOOD
-lon <- -99.26000
-lat <- 47.12000
+#lon <- -99.26000
+#lat <- 47.12000
 
 # CPER
-#lon <- -104.74559
-#lat <- 40.81554
+lon <- -104.74559
+lat <- 40.81554
 
 # RMNP
 #lon <- -105.5171737
