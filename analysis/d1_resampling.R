@@ -13,7 +13,7 @@ library(tidyverse)
 # ONLY CHANGE THESE SETTINGS IF NEEDED
 
 # Set working directory
-setwd("/Users/leobaldiga/Documents/GitHub/geodiversity_2025/") 
+#setwd("/Users/leobaldiga/Documents/GitHub/geodiversity_2025/") 
 
 #Define NEON site location codes (processed_tifs/subdirectory names)
 locations <- c("ORNL", "RMNP", "CPER", "WOOD")
