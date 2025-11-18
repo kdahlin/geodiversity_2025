@@ -27,13 +27,18 @@ pca.imp <- metrics.1m %>%
   filter(func %in% c("range_1", "sbi_1", "ssk_1", "TPI_1", "stxr_1", "sku_1",
                      "raster.entropy_1", "std_1", "eastness_1", "nmodes_1"))
 
+pca.imp$tile <- as.factor(pca.imp$tile)
+
 #Beeswarm plot for subset
 library(ggbeeswarm)
-ggplot(pca.imp, aes(x = site, y = value, color = site)) +
+ggplot(pca.imp, aes(x = site, y = value, color = site, shape = tile)) +
   geom_beeswarm() +
   facet_wrap(~ func, scales = "free_y") +  # one panel per metric
   theme_bw() +
-  scale_color_manual(values = c("CPER" = "aquamarine4", "ORNL" = "royalblue4", "RMNP"="purple3", "WOOD"="darkorange3"))+
+  scale_color_manual(values = c("CPER" = "aquamarine4", "ORNL" = "royalblue4", 
+                                "RMNP"="purple3", "WOOD"="darkorange3"))+
+  scale_shape_manual(values = c("1" = 0, "2" = 1, "3" = 2, "4" = 3, "5" = 4, 
+                                "6" = 17, "7" = 18, "8" = 15, "9" = 16)) +
   labs(
     x = "Raster ID",
     y = "Value",
