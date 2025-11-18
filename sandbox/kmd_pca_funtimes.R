@@ -1,6 +1,7 @@
 
 library(corrplot)
 library(factoextra)
+library(FactoMineR)
 
 options(digits = 10)
 
@@ -26,23 +27,22 @@ split.rnames <- strsplit(rnames, "_")
 
 rnames.new <- paste0(split.rnames[[1]][1], "_", split.rnames[[1]][6])
 
-for (i in 1:length(rnames)) {
+for (i in 2:length(rnames)) {
   rnames.new <- rbind(rnames.new, 
                       paste0(split.rnames[[i]][1], "_", split.rnames[[i]][6]))
 }
 
 # attach the better names
-row.names(in.data.1m) <- as.data.frame(rnames.new[,1])
+row.names(in.data.1m) <- rnames.new[,1]
 
-# look at column summaries
-summary(in.data.1m)
+# look at column variances (to remove columns with no variance)
+variances <- sapply(in.data.1m, var)
 
-# columns with no variance
-no.var <- c("srw_1", "scl_2")
+# get the column names with no variance
+which.var <- which(variances == 0)
 
 # remove columns with no variance
-no.var.cols <- which((names(in.data.1m) %in% no.var))
-in.data.1m <- in.data.1m[,-(no.var.cols)]
+in.data.1m <- in.data.1m[,-(which.var)]
 
 # look at correlations
 cors <- cor(in.data.1m)
@@ -54,19 +54,52 @@ corrplot(cors, order = "FPC", method = "circle")
 # do pca
 pca <- prcomp(in.data.1m, center = TRUE, scale = TRUE)
 
+# note some plotting from here on out using the factoextra package comes from 
+# scripts provided here: https://www.sthda.com/english/articles/31-principal-component-methods-in-r-practical-guide/112-pca-principal-component-analysis-essentials/
+
 # look at variances
-plot(pca)
+fviz_eig(pca, addlabels = TRUE)
 
 # look at variance explained
 summary(pca)
 
-# get the PCA 
+# get the PCA loadings (aka rotations)
+loadings <- pca$rotation
 
+# get the scores/PCs
+scores <- as.data.frame(pca$x)
 
+# biplot
+fviz_pca_biplot(pca, repel = TRUE,                 
+                col.var = "#2E9FDF", # Variables color
+                col.ind = "#696969")  # Individuals color
 
+# let's look at how the PCs correlate with the variables
+pca.var <- get_pca_var(pca)
 
+x11()
+corrplot(pca.var$cos2, is.corr = FALSE)
 
+# I (Kyla) likes this better because I understand it, but weird about PC36!?
+pc.corrs <- cor(in.data.1m, scores)
+corrplot(pc.corrs)
 
+# let's take a look
+plot(scores$PC36, in.data.1m$stxr_1, type = "n")
+text(scores$PC36, in.data.1m$stxr_1, labels = row.names(in.data.1m))
+# weird. not sure about this.
+
+# let's look at which variables are most strongly correlated with which scores
+cors.sorted <- as.data.frame(matrix(NA, nrow = 46, ncol = 36))
+cors.Rvals.sorted <- as.data.frame(matrix(NA, nrow = 46, ncol = 36))
+
+for (i in 1:36) {
+  names(cors.sorted)[i] <- colnames(pc.corrs)[i]
+  get.sort <- sort(abs(pc.corrs[,i]), decreasing = TRUE)
+  cors.sorted[,i] <- names(get.sort)
+  names(cors.Rvals.sorted)[i] <- paste0(colnames(pc.corrs)[i], "_Rval")
+  cors.Rvals.sorted[,i] <- sort(abs(pc.corrs[,i]))
+}
 
 
 
