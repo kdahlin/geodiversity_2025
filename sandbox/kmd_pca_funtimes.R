@@ -51,8 +51,18 @@ cors <- cor(in.data.1m)
 x11()
 corrplot(cors, order = "FPC", method = "circle")
 
+### OPTIONAL - REMOVE HIGHLY CORRELATED VARIABLES AND WEIRD ONES
+remove.some <- c("stdv_1", "sq_1", "mad_1", "tri_1", "TRIriley_1", "TRIrmsd_1",
+                 "raster.entropy_1", "std_1", "sdc_1", "sdq6_1", "smean_1", 
+                 "tpi_1")
+
+remove.cols <- which(names(in.data.1m) %in% remove.some)
+
+small.data.1m <- in.data.1m[,-c(remove.cols)]
+##########
+
 # do pca
-pca <- prcomp(in.data.1m, center = TRUE, scale = TRUE)
+pca <- prcomp(small.data.1m, center = TRUE, scale = TRUE)
 
 # note some plotting from here on out using the factoextra package comes from 
 # scripts provided here: https://www.sthda.com/english/articles/31-principal-component-methods-in-r-practical-guide/112-pca-principal-component-analysis-essentials/
@@ -81,7 +91,7 @@ x11()
 corrplot(pca.var$cos2, is.corr = FALSE)
 
 # I (Kyla) likes this better because I understand it, but weird about PC36!?
-pc.corrs <- cor(in.data.1m, scores)
+pc.corrs <- cor(small.data.1m, scores)
 corrplot(pc.corrs)
 
 # let's take a look
@@ -90,10 +100,10 @@ text(scores$PC36, in.data.1m$stxr_1, labels = row.names(in.data.1m))
 # weird. not sure about this.
 
 # let's look at which variables are most strongly correlated with which scores
-cors.sorted <- as.data.frame(matrix(NA, nrow = 46, ncol = 36))
-cors.Rvals.sorted <- as.data.frame(matrix(NA, nrow = 46, ncol = 36))
+cors.sorted <- as.data.frame(matrix(NA, nrow = 34, ncol = 34))
+cors.Rvals.sorted <- as.data.frame(matrix(NA, nrow = 34, ncol = 34))
 
-for (i in 1:36) {
+for (i in 1:34) {
   names(cors.sorted)[i] <- colnames(pc.corrs)[i]
   get.sort <- sort(abs(pc.corrs[,i]), decreasing = TRUE)
   cors.sorted[,i] <- names(get.sort)
