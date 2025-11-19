@@ -12,6 +12,7 @@ NEON_data/**/*.tif
 
 #Remove pngs from within the sandbox so that you can generate them there but they won't be pushed to the repo
 sandbox/**/*.png
+sandbox/*.png
 
 #Keeping a QGIS file I use for visualization out of the repo
 expl.qgz
