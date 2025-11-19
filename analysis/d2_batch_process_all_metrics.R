@@ -49,8 +49,8 @@ for (loc in locations) {
 functions_list <- (c("sa", "sq", "s10z", "sdq", "sdq6", #geodiv functions
                      "sdr", "sbi","sci","ssk","sku","sds", "sfd","srw", "std", 
                      "svi","stxr","ssc","sv","sph","sk","smean","spk","svk", "scl", "sdc", 
-                     "curvature", "tpi", "tri", "vrm",  # SpatialEco functions"
-                     "sar", "raster.entropy")) 
+                     "tpi", "tri", "vrm","sar", "raster.entropy"))   # SpatialEco functions"
+
 
 # Define tasks: All combinations of files and functions
 tasks <- expand.grid(file = tifs, func = functions_list, stringsAsFactors = FALSE)
@@ -304,11 +304,55 @@ moments_results_df <- moments_results_df %>%
   )
 
 #--------------------------
+# CURVATURE METRICS USING SPATIALECO
+#--------------------------
+
+compute_curvature <- function(file) {
+  r <- rast(file)
+  types <- c("profile", "planform", "total")
+  results <- lapply(types, function(type) {
+    curv_raster <- curvature(r, type = type)
+    mean_val <- global(curv_raster, fun = "mean", na.rm = TRUE)[1,1]
+    data.frame(
+      file = basename(file),
+      func = paste0("curvature_", type),
+      value = mean_val
+    )
+  })
+  do.call(rbind, results)
+}
+
+# Parallel execution for curvature metrics
+if (.Platform$OS.type == "windows") { 
+  cl <- makePSOCKcluster(num_cores)
+  clusterExport(cl, c("tifs", "compute_curvature"))
+  clusterEvalQ(cl, {
+    library(terra)
+    library(spatialEco)
+  })
+  
+  curvature_results_list <- parLapply(cl, tifs, function(file) {
+    compute_curvature(file)
+  })
+  stopCluster(cl)
+} else {
+  curvature_results_list <- mclapply(tifs, function(file) {
+    library(terra)
+    library(spatialEco)
+    compute_curvature(file)
+  }, mc.cores = num_cores)
+}
+
+# Combine curvature results into a single data frame
+curvature_results_df <- do.call(rbind, curvature_results_list)
+print(curvature_results_df)
+
+#--------------------------
 # COMBINE AND RESHAPE RESULTS
 #--------------------------
 
 # Combine terrain results with previous results
-all_results_df <- rbind(results_df, terrain_results_df, moments_results_df)
+all_results_df <- rbind(results_df, terrain_results_df, moments_results_df, curvature_results_df)
 
 # Reshape data to LONG format first
 long_df <- all_results_df %>%

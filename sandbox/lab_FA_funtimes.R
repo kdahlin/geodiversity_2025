@@ -42,10 +42,42 @@ row.names(in.data.1m) <- rnames.new[,1]
 # look at column variances (to remove columns with no variance)
 variances <- sapply(in.data.1m, var)
 
-which.var <- which(variances == 0)
-
 # remove columns with no variance
+which.var <- which(variances == 0)
 in.data.1m <- in.data.1m[,-(which.var)]
+
+#scale data
+scale.in.data.1m <- scale(in.data.1m)
+
+#run efa on in.data.1m
+fa.parallel(scale.in.data.1m, fa = "fa", fm = "minres")
+fa.parallel(scale.in.data.1m, fa = "fa", fm = "pa")
+fa.parallel(scale.in.data.1m, fa = "fa", fm = "ols")
+fa.parallel(scale.in.data.1m, fa = "fa", fm = "gls")
+#fa.parallel(scale.in.data.1m, fa = "fa", fm = "ml")
+#fa.parallel(scale.in.data.1m, fa = "fa", fm = "wls")
+
+fit_minres <- fa(scale.in.data.1m, nfactors = 3, rotate = "varimax", fm = "minres")
+print(fit_minres, cut = 0.3, sort = TRUE)
+fa.diagram(fit_minres)
+loadings_minres <- as.data.frame(fit_minres$loadings)
+
+fit_pa <- fa(scale.in.data.1m, nfactors = 4, rotate = "varimax", fm = "pa")
+print(fit_pa, cut = 0.3, sort = TRUE)
+fa.diagram(fit_pa)
+loadings_pa <- as.data.frame(fit_pa$loadings)
+
+fit_ols <- fa(scale.in.data.1m, nfactors = 4, rotate = "varimax", fm = "ols")
+print(fit_ols, cut = 0.3, sort = TRUE)
+fa.diagram(fit_ols)
+loadings_ols <- as.data.frame(fit_ols$loadings)
+
+
+
+
+
+#compare fit1 and fit2 factor groupings
+
 
 # look at correlations
 cors <- cor(in.data.1m)
@@ -60,6 +92,14 @@ remove.some <- c("stdv_1", "sq_1", "mad_1", "tri_1", "TRIriley_1", "TRIrmsd_1",
 remove.cols <- which(names(in.data.1m) %in% remove.some)
 
 small.data.1m <- in.data.1m[,-c(remove.cols)]
+
+scale.small.data.1m <- scale(small.data.1m)
+
+fa.parallel(scale.small.data.1m, fa = "fa")
+
+fit2 <- fa(scale.small.data.1m, nfactors = 4, rotate = "varimax", fm = "pa")
+print(fit2, cut = 0.3, sort = TRUE)
+fa.diagram(fit2)
 
 #okay this is really wacky, gotta reduce the multicollinearity (HACK AND SLASH METHOD)
 
@@ -131,10 +171,7 @@ geodiv_model_efa <- '
   Factor2 =~ srw_2 + srw_3 + sbi_1 + sds_1 + nmodes_1
   Factor3 =~ ssk_1 + spk_1 + sdq_1 + sku_1
   Factor4 =~ eastness_1 + TPI_1 
-  #regressions among factors
-  Factor1 ~~ Factor2 + Factor3 + Factor4
-  Factor2 ~~ Factor3 + Factor4
-  Factor3 ~~ Factor4
+
   '
 # Fit the CFA model
 fit_cfa <- cfa(geodiv_model_efa, data = scale.reduced.data)
