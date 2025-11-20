@@ -62,7 +62,7 @@ print(fit_minres, cut = 0.3, sort = TRUE)
 fa.diagram(fit_minres)
 loadings_minres <- as.data.frame(fit_minres$loadings)
 
-fit_pa <- fa(scale.in.data.1m, nfactors = 4, rotate = "varimax", fm = "pa")
+fit_pa <- fa(scale.in.data.1m, nfactors = 3, rotate = "varimax", fm = "pa")
 print(fit_pa, cut = 0.3, sort = TRUE)
 fa.diagram(fit_pa)
 loadings_pa <- as.data.frame(fit_pa$loadings)
