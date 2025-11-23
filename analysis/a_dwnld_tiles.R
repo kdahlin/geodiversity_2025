@@ -14,30 +14,39 @@ library(cowplot)
 library(terra)
 library(neonUtilities)
 
+# prevent R from reporting values in scientific notation
+options(scipen=999)
+
 # --------------------------------------------------
 # USER-DEFINED VARIABLES- should change before runs
 # --------------------------------------------------
 
 # today's date
-date <- "20251022"
+date <- gsub("-", "", Sys.Date())
 
 # directory to save "raw" neon data to (working in github)
 save.directory <- "./NEON_data/"
 
 # site code and year
-site <- "WOOD" 
-year <- "2019"  
-siteyear <- paste0(site, "/", year, "/")
+site <- "MLBS" 
+year <- "2022"  
 
 # make a directory for the data you eventually download
 dir.create(paste0(save.directory, site))
 save.directory <- paste0(save.directory, site, "/")
 
+
+# Set buffer (KILOMETERS) to determine how many adjoining tiles to add around
+# the sampled points
+# ex. buffer = 0 fills gaps in the input data but doesn't add a buffer
+# ex. buffer = 3 creates a 7x7km grid and pulls a total of 49 tiles
+buffer = 3
+
 # define EPSG code of your spatial data UTM zone
 # four NEON sites are listed below
 
 # WOOD
-epsg <- 32614
+#epsg <- 32614
 
 # CPER
 #epsg <- 32613
@@ -48,12 +57,16 @@ epsg <- 32614
 # ORNL
 #epsg <- 32616
 
+# MLBS
+epsg <- 32617
+
+
 # what is the approx centroid of where you want data from (in lat/lon)
 # four NEON sites are listed below
 
 # WOOD
-lon <- -99.26000
-lat <- 47.12000
+#lon <- -99.26000
+#lat <- 47.12000
 
 # CPER
 #lon <- -104.74559
@@ -67,23 +80,23 @@ lat <- 47.12000
 #lon <- -84.3261184
 #lat <- 35.9337824
 
+# MLBS 
+lon <- -80.530259
+lat <- 37.383836 
+
 # --------------------------------
-# CREATE SF OBJECT OF PT LOCATION
+# CREATE data frame OF PT LOCATION
 # --------------------------------
 
-# turn that lat/lon into a sf object for R (with lat/lon epsg)
-centroid <- as.data.frame(matrix(data = c(lat, lon), nrow = 1, ncol = 2))
-names(centroid) <- c("lat", "lon")
-
-# create a centroid pt
-centroid.pt <- st_as_sf(centroid, coords = c("lon", "lat"))
-
-# use the GEE epsg (always 4326) to be able to view in GEE
-st_crs(centroid.pt) <- 4326
+# turn that lat/lon into a data frame
+centroid <- as.data.frame(matrix(data = c(lon, lat), nrow = 1, ncol = 2))
+names(centroid) <- c("lon", "lat")
 
 #-----------------------------------------------
 # RUN LIST AOP TILES FUNCTION TO IDENTIFY TILES
 #-----------------------------------------------
+# note, this function is written assuming you have a list of lat/lon points,
+# but here we are only doing one 
 
 list_AOP_Tiles <- function(coords, input_crs = 4326) {
   # coords: matrix or data.frame with two columns (X, Y), or optionally three 
@@ -160,32 +173,12 @@ list_AOP_Tiles <- function(coords, input_crs = 4326) {
 #----------------------------------------------------------------
 # GENERATE UTM COORDINATES, ESPG CODE, AND NEON TILE COORDINATES
 #----------------------------------------------------------------
-
-# project data into target UTM Zone 
-centroid.rpj <- st_transform(centroid.pt, crs = epsg)
-
-# plot to take a look (would be nice to make a better map here...)
-ggplot(data = centroid.rpj) +
-  geom_sf() +
-  #geom_sf(data = states_utm, fill = NA) +
-  theme_bw()
-
-# create data frame of coordinates
-raw_coords_df <- as.data.frame(st_coordinates(centroid.rpj))
-
 # call the function to list the UTM coordinates and coordinates of all the tiles 
-UTM_coords_df <- list_AOP_Tiles(raw_coords_df, input_crs = epsg) 
+UTM_coords_df <- list_AOP_Tiles(centroid) 
 
 #----------------
 # GET NEON TILES
 #----------------
-
-# Set buffer (KILOMETERS) to determine how many adjoining tiles to add around
-# the sampled points
-# ex. buffer = 0 fills gaps in the input data but doesn't add a buffer
-# ex. buffer = 3 creates a 3x3km grid and pulls a total of 36 tiles
-buffer = 3
-
 # create a data frame of unique tile eastings and northings 
 easting <- UTM_coords_df$tile_easting
 
@@ -199,7 +192,7 @@ tile_points <- st_as_sf(tile_coords,
                         crs = epsg) 
 
 #----------
-# PLOT PTS
+# PLOT Point
 #----------
 
 # load basemap 
@@ -233,7 +226,8 @@ inset <- ggplot(data = states_utm) +
   geom_sf(fill = "lightblue") +
   geom_sf(data = states_utm, fill = "grey")+
   geom_sf(data = bbox, fill = "red")+
-  coord_sf(xlim = c(eastrefmin, eastrefmax), ylim = c(northrefmin, northrefmax), crs = epsg) +
+  coord_sf(xlim = c(eastrefmin, eastrefmax), ylim = c(northrefmin, northrefmax),
+           crs = epsg) +
   theme(axis.text.x = element_blank(),
         axis.ticks.x = element_blank(),
         axis.text.y = element_blank(),
@@ -244,7 +238,8 @@ tiles_map <- ggplot(data = states_utm) +
   geom_sf() +
   geom_sf(data = states_utm, fill = NA)+
   geom_sf(data = tile_points, size = 3, shape = 24, fill = "lightgreen")+
-  coord_sf(xlim = c(eastmin, eastmax), ylim = c(northmin, northmax), crs = epsg, datum = epsg) +
+  coord_sf(xlim = c(eastmin, eastmax), ylim = c(northmin, northmax), 
+           crs = epsg, datum = epsg) +
   theme_bw()
 
 # combine inset and tile maps together and plot 
@@ -302,7 +297,8 @@ tiles_map2 <- ggplot(data = states_utm) +
   #geom_sf(data = states_utm, fill = NA)+
   geom_sf(data = tile_points2, size = 3, shape = 24, fill = "blue")+
   geom_sf(data = tile_points, size = 3, shape = 24, fill = "lightgreen")+
-  coord_sf(xlim = c(eastmin, eastmax), ylim = c(northmin, northmax), crs = epsg, datum = epsg) +
+  coord_sf(xlim = c(eastmin, eastmax), ylim = c(northmin, northmax), 
+           crs = epsg, datum = epsg) +
   theme_bw()
 
 # combine inset and new tile map together and plot 

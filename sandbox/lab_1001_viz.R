@@ -175,7 +175,7 @@ print(r1_kurtosis)
 #multiscale dtm compare with terra terrain functions
 #roughness via adjusted standard deviation
 library(MultiscaleDTM)
-adjsd<-AdjSD(r1, include_scale=TRUE)
+adjsd<-AdjSD(r1)
 plot(adjsd)
 global(adjsd, fun = 'mean', na.rm = TRUE)
 
@@ -600,7 +600,50 @@ plot(SpaEco_curv_clip, zlim=c(-0.01, 0.01))
 
 
 
+### 3D visualization of each site 
+
+#Define NEON site location codes (subdirectory names)
+locations <- c("ORNL", "RMNP", "CPER", "WOOD")
+
+#iterate over each NEON site as a subdir of processed_tifs to get tif files
+tifs <- c()
+for (loc in locations) {
+  dir_path <- file.path("processed_tifs", loc)
+  tif_files <- list.files(path = dir_path, pattern = "\\.tif$", full.names = TRUE)
+  tifs <- c(tifs, tif_files)
+}
 
 
+library(rayshader)
+library(rgl)
+library(terra)
+
+for (loc in locations) {
+  dir_path <- file.path("processed_tifs", loc)
+  tif_files <- list.files(path = dir_path, pattern = "\\.tif$", full.names = TRUE)
+  
+  for (tif in tif_files) {
+    r <- rast(tif)
+    r_matrix <- as.matrix(r)
+    
+    # Generate hillshade from elevation matrix
+    hillshade_layer <- sphere_shade(r_matrix)
+    
+    # 3D visualization with rayshader; explicitly name the heightmap argument
+    plot_3d(heightmap = r_matrix, hillshade = hillshade_layer, zscale = 10)
+    
+    # Save snapshots and high quality renders
+    render_snapshot(filename = paste0("results/", loc, "_", basename(tif), "_3d.png"))
+    render_highquality(filename = paste0("results/", loc, "_", basename(tif), "_3d_highq.png"))
+    
+    # Close rayshader rgl window before opening a new one
+    rgl::rgl.close()
+    
+    # 3D visualization with rgl (interactive)
+    open3d()
+    plot3d(r_matrix, col = terrain.colors(100), zlim = range(r_matrix, na.rm = TRUE))
+    title3d(main = paste(loc, basename(tif)))
+  }
+}
 
 

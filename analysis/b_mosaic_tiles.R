@@ -5,8 +5,8 @@ library(sf)
 library(terra)
 
 #####Only part that should change between runs############
-sitename = "WOOD"
-year = "2019" #Year of data acquisition, not current year
+sitename = "RMNP"
+year = "2020" #Year of data acquisition, not current year
 #setwd("C:/...")#Uncomment this line if your working directory is not already set to the repo!
 ##########################################################
 
@@ -42,7 +42,7 @@ for (i in 1:length(blis)){
   dir.create(paste0("./processed_tifs/", sitename))
   out.mosaic.name <- paste0("./processed_tifs/", sitename, "/",
                             sitename, "_", year, "_DEM_mosaic_",
-                            date, "_", bli, ".tif")
+                            date, "_", bli, "_1m.tif")
   
   writeRaster(mosaic.dem, out.mosaic.name,
               overwrite = FALSE)
