@@ -9,7 +9,14 @@ library(tools)
 locations <- c("ORNL",
                "RMNP",
                "CPER",
-               "WOOD")
+               "WOOD",
+               "CLBJ",
+               "MLBS",
+               "OAES",
+               "OSBS",
+               "TEAK",
+               "UNDE",
+               "WREF")
 
 #iterate over each NEON site  as a subdir of processed_tifs to get tif files
 tifs <- c()

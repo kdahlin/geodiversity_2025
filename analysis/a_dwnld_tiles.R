@@ -14,6 +14,9 @@ library(cowplot)
 library(terra)
 library(neonUtilities)
 
+# Set working directory to your copy of the repo
+#setwd("C:/...")
+
 # prevent R from reporting values in scientific notation
 options(scipen=999)
 
@@ -28,7 +31,7 @@ date <- gsub("-", "", Sys.Date())
 save.directory <- "./NEON_data/"
 
 # site code and year
-site <- "OAES" 
+site <- "TEAK"
 year <- "2023"  
 
 # make a directory for the data you eventually download
@@ -58,7 +61,19 @@ buffer = 3
 #epsg <- 32616
 
 # MLBS
-epsg <- 32617
+#epsg <- 32617
+
+# UNDE
+#epsg <- 32616
+
+# OSBS
+#epsg <- 32617
+
+#WREF
+#epsg <- 32610
+
+#TEAK
+epsg <- 32611
 
 
 # what is the approx centroid of where you want data from (in lat/lon)
@@ -84,9 +99,25 @@ epsg <- 32617
 #lon <- -80.530259
 #lat <- 37.383836 
 
-OAES
-lon <- -99.099526
-lat <- 35.3680004
+#OAES
+#lon <- -99.099526
+#lat <- 35.3680004
+
+# UNDE
+#lon <- -89.50752
+#lat <- 46.211626
+
+# OSBS
+#lon <- -82.001263
+#lat <- 29.682624
+
+#WREF
+#lon <- -121.978160
+#lat <- 45.838306
+
+# TEAK
+lon <- -119.029
+lat <- 37.040
 
 # --------------------------------
 # CREATE data frame OF PT LOCATION
@@ -330,3 +361,4 @@ for (i in 1:nrow(tile_coords_new)) {
                            savepath = save.directory)
   print(i)
 }
+
