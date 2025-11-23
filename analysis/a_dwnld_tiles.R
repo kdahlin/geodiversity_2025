@@ -28,8 +28,8 @@ date <- gsub("-", "", Sys.Date())
 save.directory <- "./NEON_data/"
 
 # site code and year
-site <- "MLBS" 
-year <- "2022"  
+site <- "OAES" 
+year <- "2023"  
 
 # make a directory for the data you eventually download
 dir.create(paste0(save.directory, site))
@@ -81,8 +81,12 @@ epsg <- 32617
 #lat <- 35.9337824
 
 # MLBS 
-lon <- -80.530259
-lat <- 37.383836 
+#lon <- -80.530259
+#lat <- 37.383836 
+
+OAES
+lon <- -99.099526
+lat <- 35.3680004
 
 # --------------------------------
 # CREATE data frame OF PT LOCATION

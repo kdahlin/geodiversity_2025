@@ -5,8 +5,8 @@ library(sf)
 library(terra)
 
 #####Only part that should change between runs############
-sitename = "RMNP"
-year = "2020" #Year of data acquisition, not current year
+sitename = "OAES"
+year = "2023" #Year of data acquisition, not current year
 #setwd("C:/...")#Uncomment this line if your working directory is not already set to the repo!
 ##########################################################
 
