@@ -48,6 +48,16 @@ for (i in 1:length(blis)){
               overwrite = FALSE)
 }
 
+#check the mosaics for NA values
+mosaic.tifs <- list.files(paste0("./processed_tifs/", sitename), pattern = "1m.tif$",
+                          full.names = TRUE)
+for (mosaic.tif in mosaic.tifs) {
+  r1 = rast(mosaic.tif)
+  if (any(is.na(values(r1)))){
+    print(mosaic.tif)
+  }
+}
+
 # -----
 # all done!
 # -----
