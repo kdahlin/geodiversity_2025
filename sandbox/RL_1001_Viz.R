@@ -5,23 +5,34 @@ library(raster)
 library(mapdata)
 library(ggplot2)
 library(cowplot)
+library(tidyr)
 library(sf)
 library(rasterVis)
 
 setwd("C://Users/rache/Documents/geodiversity_2025/sandbox/")
 
-ORNL <- "C://Users/rache/Documents/geodiversity_2025/processed_tifs/ORNL_2018_DEM_mosaic_20250925.tif"
+ORNL <- "C://Users/rache/Documents/geodiversity_2025/geodiversity_2025/processed_tifs/ORNL_2018_DEM_mosaic_20250925.tif"
 CPER <- "C://Users/rache/Documents/geodiversity_2025/processed_tifs/CPER_2020_DEM_mosaic_20251005.tif"
 RMNP <- "C://Users/rache/Documents/geodiversity_2025/processed_tifs/RMNP_2020_DEM_mosaic_20251005.tif"
 WOOD <- "C://Users/rache/Documents/geodiversity_2025/processed_tifs/WOOD_2020_DEM_mosaic_20251005.tif"
 
 r1<-rast(ORNL)
 plot(r1)
+summary(r1)
+min <- global(r1, fun = "min", na.rm = TRUE)
+min
+max <- global(r1, fun = "max", na.rm = TRUE)
+max
 
-ORNL_slope <- terrain(r1, v="slope")
-ORNL_aspect <- terrain(r1, v="aspect")
+ORNL_slope <- terrain(r1, v = "slope", neighbors = 8, unit = "degrees")
 plot(ORNL_slope)
+mean_slope <- global(ORNL_slope, fun = "mean", na.rm = TRUE)
+mean_slope
+
+ORNL_aspect <- terrain(r1, v="aspect", v = "aspect", neighbors = 8, unit = "radians")
 plot(ORNL_aspect)
+mean_aspect <- global(ORNL_aspect, fun = "mean", na.rm = TRUE)
+mean_aspect
 
 r2<-rast(RMNP)
 plot(r2)
@@ -157,6 +168,8 @@ ggplot() +
   ) +
   theme_minimal()
 
+grid_sf$ORNL_curvature
+
 ###################MultiscaleDTM####################
 #https://cran.r-project.org/web/packages/MultiscaleDTM/MultiscaleDTM.pdf
 #Calculates multi-scale geomorphometric terrain attributes from regularly gridded digital terrain models using a variable focal windows size
@@ -164,52 +177,109 @@ library(MultiscaleDTM)
 
 #fits a quadratic surface and can be used to calculate slope, aspect, curvatures, and provide a map of discrete landform classes
 #default 3x3 window
-#11x11 window
 qfit1<-Qfit(r1, w=3, metrics =c('profc'), slope_tolerance = 2, force_center=TRUE, include_scale=TRUE, na.rm=TRUE)
-plot(qfit1)
-
 profc <- qfit1$profc_3x3
 summary(profc)
 plot(profc)
 
-# Convert grid_sf to terra vector
-grid_vect <- vect(grid_sf)
+grid_vect <- vect(grid_sf) # Convert grid_sf to terra vector
 
-# Extract meanc for each polygon directly
+# Extract profc for each polygon directly
 # This computes the mean of all raster cells inside each polygon
-vals <- terra::extract(qfit2$meanc_11x11, grid_vect, fun = mean, na.rm = TRUE)
+vals_dtm <- terra::extract(qfit1$profc_3x3, grid_vect, fun = mean, na.rm = TRUE)
 
 # Attach to grid_sf
-grid_sf$meanc <- vals[,2] 
+grid_sf$profc.dtm <- vals_dtm[,2] 
 
 ggplot() +
-  geom_sf(data = grid_sf, aes(fill = meanc), color = "black", linewidth = 0.3) +
-  scale_fill_viridis_c(option = "plasma", na.value = "grey90") +
+  geom_sf(data = grid_sf, aes(fill = profc.dtm), color = "black", linewidth = 0.3) +
+  scale_fill_viridis_c(option = "plasma", limits = c(-0.005, 0.005)) +
   labs(
-    title = "Local Mean Curvature (aggregated by 11×11 grid)",
-    fill = "Mean curvature"
+    title = "Profile Curvature using MultiScaleDTM Package",
+    fill = "Profile curvature"
   ) +
   theme_minimal()
 
 #Calculating roughness via adjusted standard deviation
-adjsd1<-AdjSD(r1, include_scale=TRUE)
-plot(adjsd1)
+DTM_adjsd1<-AdjSD(r1, include_scale=TRUE)
+mean_adjsd1 <- global(DTM_adjsd1, fun = "mean", na.rm = TRUE)
+mean_adjsd1
+plot(DTM_adjsd1)
 
-# calculate metrics (ORNL) for for each grid
-for (i in seq_len(nrow(grid_sf))) {
-  sub_r <- crop(r1, vect(grid_sf[i, ]))
-  mat <- as.matrix(sub_r, wide = TRUE)
-  grid_sf$ORNL_profc_multiDTM[i] <- MultiscaleDTM::Qfit(mat)
-}
+#Roughness Index-Elevation
+DTM_RoughnessIndexEle<-RIE(r1, include_scale=TRUE)
+mean_rie<- global(DTM_RoughnessIndexEle, fun = "mean", na.rm = TRUE)
+mean_rie
+plot(DTM_RoughnessIndexEle)
 
 ######################SpatialEco###########################
 library(spatialEco)
 
-SpaEco_curv<-curvature(r1, type="profile")  #profile curvature from SpaEco package
+SpaEco_curv<-curvature(r1, type=c("profile", "planform", "total"))  #profile curvature from SpaEco package
 summary(values(SpaEco_curv))
 
-SpaEco_curv_clip <- clamp(SpaEco_curv, lower=-0.01, upper=0.01)
-plot(SpaEco_curv_clip, zlim=c(-0.01, 0.01))
+#SpaEco_curv_clip <- clamp(SpaEco_curv, lower=-0.01, upper=0.01) #set lower and upper limit/ remove outliers
+#plot(SpaEco_curv_clip, zlim=c(-0.01, 0.01))
+# Extract profc for each polygon directly
+vals_spaeco <- terra::extract(SpaEco_curv, grid_vect, fun = mean, na.rm = TRUE)
+
+# Attach to grid_sf
+grid_sf$profc.spaeco <- vals_spaeco[,2] 
+
+#plot
+ggplot() +
+  geom_sf(data = grid_sf, aes(fill = profc.spaeco), color = "black", linewidth = 0.3) +
+  scale_fill_viridis_c(option = "plasma", limits = c(-0.005, 0.005)) +
+  labs(
+    title = "Profile Curvature using SpatialEco Package",
+    fill = "Profile curvature"
+  ) +
+  theme_minimal()
+
+#topographic position
+SpaEco_tpi <- tpi(r1, scale = 3, win = "rectangle", normalize = FALSE, zero.correct = FALSE)
+plot(SpaEco_tpi)
+mean_tpi <- global(SpaEco_tpi, fun = "mean", na.rm = TRUE)
+mean_tpi
+
+#terrain ruggedness
+SpaEco_tri <- tri(r1, s = 3, exact = TRUE)
+mean_tri <- global(SpaEco_tri, fun = "mean", na.rm = TRUE)
+mean_tri
+plot(SpaEco_tri)
+
+#Vector ruggedness measure
+SpaEco_vrm<-VRM(r1, include_scale=TRUE)
+mean_vrm<- global(SpaEco_vrm, fun = "mean", na.rm = TRUE)
+mean_vrm
+plot(SpaEco_vrm)
+
+#surface area ratio
+SpaEco_sar <- sar(r1, s = NULL, scale = TRUE)
+mean_sar <- global(SpaEco_sar, fun = "mean", na.rm = TRUE)
+mean_sar
+plot(SpaEco_sar)
+
+#Raster entropy
+rEnt <- raster.entropy(r1, d=3, categorical = FALSE, global = TRUE)
+median_rEnt <- global(rEnt, fun=median, na.rm=TRUE)
+median_rEnt
+plot(rEnt, limits=c(2.1962, 2.1973))
+rEnt
+
+#Calculate focal statistics for raster
+library(moments)
+moments_skew <- raster.moments(r1, type = "skewness", s = 3)
+moments_skew
+plot(moments_skew)
+mean_skew <- global(moments_skew, fun = "mean", na.rm = TRUE)
+mean_skew
+
+moments_kurtosis <- raster.moments(r1, type = "kurtosis", s = 3)
+moments_kurtosis
+plot(moments_kurtosis)
+mean_kurtosis <- global(moments_skew, fun = "mean", na.rm = TRUE)
+mean_kurtosis
 
 
 
@@ -226,3 +296,106 @@ system.time(
 print(output_raster)
 rasterVis::levelplot(output_raster[[1]], margin=F, par.settings=eviTheme, 
           ylab=NULL, xlab=NULL, main='Sa')
+
+######Plotting######################
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(cowplot)
+library(tidyr)
+Metrics <- read_csv("results/all_geodiversity_metrics_expanded.csv")
+View(Metrics)
+
+#Pivot data to format for plotting
+Metrics_Long<- Metrics %>%
+  pivot_longer(
+    cols = -func,               # except first row
+    names_to = "Raster",        # new column for raster
+    values_to = "value"         # new column for the metric value
+  ) %>%
+  rename(metrics = func) %>%       # rename func to metrics
+  select(metrics, value, Raster) %>%
+  mutate(raster_id = substr(Raster, 1, 4)) %>%  # add new column with locations, ID first 4 letters in raster
+  drop_na()  #remove NA values
+
+#Boxplot for all
+ggplot(Metrics_Long, aes(x = raster_id, y = value, color = raster_id)) +
+  geom_boxplot(outlier.colour = "black", outlier.size = 1) +
+  geom_dotplot(binaxis = 'y', stackdir = 'center', dotsize = 0.8) +
+  facet_wrap(~ metrics, scales = "free_y") +  # one panel per metric
+  scale_color_manual(values = c("CPER" = "aquamarine4", "ORNL" = "royalblue4", "RMNP"="purple3", "WOOD"="darkorange3"))+
+  theme_minimal() +
+  labs(
+    x = "Raster ID",
+    y = "Value",
+    title = "Metrics Across 4 different surfaces")
+
+#filter data per metrics
+type1 <- Metrics_Long %>%
+  filter(metrics %in% c("s10z", "sdq6", "smean", "sph", "sv", "svk"))
+type2 <- Metrics_Long %>%
+  filter(metrics %in% c("sdc", "sdq", "sk", "spk", "tri", "vrm", "sa", "sq"))
+type3 <- Metrics_Long %>%
+  filter(metrics %in% c("scl", "sku", "srw", "raster.entropy", "stxr"))
+type4 <- Metrics_Long %>%
+  filter(metrics %in% c("sfd", "sci", "svi","tpi"))
+type5 <- Metrics_Long %>%
+  filter(metrics %in% c("sbi", "ssk"))
+type6 <- Metrics_Long %>%
+  filter(metrics %in% c("sdr","curvature", "sds"))
+type7 <- Metrics_Long %>%
+  filter(!metrics %in% c("s10z", "sdq6", "smean", "sph", "sv", "svk",
+                         "sdc", "sdq", "sk", "spk", "tri", "vrm", "sa", "sq",
+                         "scl", "sku", "srw", "raster.entropy", "stxr", 
+                         "sfd", "sci", "svi","tpi",
+                         "sbi", "ssk",
+                         "sdr", "curvature", "sds"))
+
+#Boxplots by types
+ggplot(type7, aes(x = raster_id, y = value, color = raster_id)) +
+  geom_boxplot() +
+  geom_jitter(shape=16, position=position_jitter(0.2)) +
+  facet_wrap(~ metrics, scales = "free_y") +  # one panel per metric
+  theme_minimal() +
+  scale_color_manual(values = c("CPER" = "aquamarine4", "ORNL" = "royalblue4", "RMNP"="purple3", "WOOD"="darkorange3"))+
+  labs(x = "", y = "", title = "Metrics Across 4 different surfaces") +
+  theme(legend.position="none",
+        axis.text = element_text(size=6))
+
+ggsave("Boxplot4.png", width = 13.5 , height = 10 , units = "cm")
+ggsave("Boxplot6.png", width = 13.5 , height = 6 , units = "cm")
+
+#Violin plot for all
+ggplot(Metrics_Long, aes(x = raster_id, y = value, fill = raster_id)) +
+  geom_violin(trim=FALSE, alpha=0.5) +
+  geom_boxplot(width=0.1) +
+  facet_wrap(~ metrics, scales = "free_y") +  # one panel per metric
+  theme_minimal() +
+  scale_fill_manual(values = c("CPER" = "aquamarine4", "ORNL" = "royalblue4", "RMNP"="purple3", "WOOD"="darkorange3"))+
+  labs(
+    x = "Raster ID",
+    y = "Value",
+    title = "Metrics Across 4 different surfaces")
+
+#Beeswarm plot for all
+library(ggbeeswarm)
+ggplot(Metrics_Long, aes(x = raster_id, y = value, color = raster_id)) +
+  geom_beeswarm() +
+  facet_wrap(~ metrics, scales = "free_y") +  # one panel per metric
+  theme_minimal() +
+  scale_color_manual(values = c("CPER" = "aquamarine4", "ORNL" = "royalblue4", "RMNP"="purple3", "WOOD"="darkorange3"))+
+  labs(
+    x = "Raster ID",
+    y = "Value",
+    title = "Metrics Across 4 different surfaces")
+
+
+ggplot(sa, aes(x=raster_id, y=value))+
+  geom_beeswarm() +
+  theme_minimal()
+
+ggplot(sa, aes(x=raster_id, y=value))+
+  geom_violin() +
+  stat_summary(fun.data=sa)
+  theme_minimal()
+

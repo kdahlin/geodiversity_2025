@@ -1,14 +1,22 @@
 #Leo Baldiga
 #geodiversity testing methods
 
+#install MultiscaleDTM and disable rgl if issues arise
+#install.packages("MultiscaleDTM")
+#install.packages("rgl", configure.args="--disable-opengl") 
+#this Resolves weird GPU OpenGL problem on apple silicon machines, but no 3d Rendering
+
+#LOAD LIBRARIES ---------------------------------------------------------------
 library(terra)
 library(geodiv)
 library(sf)
 library(tidyverse)
 library(viridis)
 library(parallel)
+library(rgl)
+library(MultiscaleDTM)
 
-mosaic_path <- ("~/Documents/GitHub/geodiversity_2025/processed_tifs/ORNL_2018_DEM_mosaic_20250925.tif")
+mosaic_path <- ("/Users/leobaldiga/Documents/GitHub/geodiversity_2025/processed_tifs/ORNL/ORNL_2018_DEM_mosaic_2025-10-22_1.tif")
 
 #ORNL ANALYSIS (OAK RIDGE NATIONAL LAB) ----------------------------------------
 
@@ -82,47 +90,21 @@ title("Roughness on normalized plane removed raster")
 
 #roughness on plane removed raster
 sa <- sa(r1)
-sa_rem <- sa(r1_rem)
-sa_norm <- sa(normr)
-sa_norm_rem <- sa(normr_rem)
-
 print(sa)
-print(sa_rem)
-print(sa_norm)
-print(sa_norm_rem)
 
 #surface bearing index on plane removed raster
 sbi <- sbi(r1)
-sbi_rem <- sbi(r1_rem)
-sbi_norm <- sbi(normr)
-sbi_norm_rem <- sbi(normr_rem)
-
 print(sbi)
-print(sbi_rem)
-print(sbi_norm)
-print(sbi_norm_rem)
+
 
 #Root Mean Square Roughness on plane removed raster
 sq <- sq(r1)
-sq_rem <- sq(r1_rem)
-sq_norm <- sq(normr)
-sq_norm_rem <- sq(normr_rem)
-
 print(sq)
-print(sq_rem)
-print(sq_norm)
-print(sq_norm_rem)
+
 
 #Reduced Peak Height
 spk <- spk(r1)
-spk_rem <- spk(r1_rem)
-spk_norm <- spk(normr)
-spk_norm_rem <- spk(normr_rem)
-
 print(spk)
-print(spk_rem)
-print(spk_norm)
-print(spk_norm_rem)
 
 #Ten Point Height
 s10z <- s10z(r1)
@@ -167,6 +149,166 @@ print(sfd)
 print(sfd_rem)
 print(sfd_norm)
 print(sfd_norm_rem)
+
+#surface skewness 
+ssk <- ssk(r1)
+print(ssk)
+
+#surface kurtosis
+sku <- sku(r1, excess = F)
+print(sku)
+
+sku_excess <- sku(r1, excess = T)
+print(sku_excess)
+
+#from moments package - skewness
+library(moments)
+r1_values <- values(r1)
+r1_skewness <- moments::skewness(r1_values, )
+print(r1_skewness)
+
+r1_kurtosis <- moments::kurtosis(r1_values)
+print(r1_kurtosis)
+
+#does the same thing as geodiv!
+
+#multiscale dtm compare with terra terrain functions
+#roughness via adjusted standard deviation
+library(MultiscaleDTM)
+adjsd<-AdjSD(r1, include_scale=TRUE)
+plot(adjsd)
+global(adjsd, fun = 'mean', na.rm = TRUE)
+
+#roughness index-elevation
+ri_elev<-RIE(r1, include_scale=TRUE)
+plot(ri_elev)
+global(ri_elev, fun = 'mean', na.rm = TRUE)
+
+#terra slope
+terr_slope<-terrain(r1, v="slope")
+plot(terr_slope)
+global(terr_slope, fun = 'mean', na.rm = TRUE)
+
+#terra aspect
+terr_aspect<-terrain(r1, v="aspect")
+plot(terr_aspect)
+global(terr_aspect, fun = 'mean', na.rm = TRUE)
+
+#terra northness
+terr_northness<-cos(terrain(r1, v = "aspect", neighbors = 8, unit = "radians"))
+plot(terr_northness)
+global(terr_northness, fun = 'mean', na.rm = TRUE)
+
+#terra eastness
+terr_eastness<-sin(terrain(r1, v = "aspect", neighbors = 8, unit = "radians"))
+plot(terr_eastness)
+global(terr_eastness, fun = 'mean', na.rm = TRUE)
+
+#terra roughness
+terr_rough<-terrain(r1, v="roughness")
+plot(terr_rough)
+global(terr_rough, fun = 'mean', na.rm = TRUE)
+
+#terra tpi
+terr_tpi<-terrain(r1, v="TPI") 
+plot(terr_tpi)
+global(terr_tpi, fun = 'mean', na.rm = TRUE) 
+
+#compare to SpatialEco TPI
+library(spatialEco)
+SpaEco_tpi <- tpi(r1)
+plot(SpaEco_tpi)
+global(SpaEco_tpi, fun = "mean", na.rm = TRUE)
+
+#terra tri
+terr_tri<-terrain(r1, v="TRI")
+range(values(terr_tri), na.rm=TRUE)
+
+#spatialEco tri
+SpaEco_tri <- tri(r1, s = 3, exact = T)
+range(values(SpaEco_tri), na.rm=TRUE)
+
+#plot both side by side
+par(mfrow=c(1,2))
+plot(terr_tri, main="Terra TRI")
+plot(SpaEco_tri, main="SpatialEco TRI")
+
+#terra TRIriley - SAME RESULTS AS SpatialEco TRI
+terr_tririley<-terrain(r1, v="TRIriley")
+range(values(terr_tririley), na.rm=TRUE)
+
+#terra TRIrmsd
+terr_trirmsd<-terrain(r1, v="TRIrmsd")
+range(values(terr_trirmsd), na.rm=TRUE)
+
+##----TESTING
+
+library(terra)
+
+locations <- c("ORNL", "RMNP", "CPER", "WOOD")
+
+# Collect all tif files in folders named after locations
+tifs <- c()
+for (loc in locations) {
+  dir_path <- file.path("processed_tifs", loc)
+  tif_files <- list.files(path = dir_path, pattern = "\\.tif$", full.names = TRUE)
+  tifs <- c(tifs, tif_files)
+}
+
+terrain_values <- c("slope", "aspect", "TPI", "TRI", 
+                    "TRIriley", "TRIrmsd", "roughness")
+
+results_list <- list()
+
+for (tif_path in tifs) {
+  r <- rast(tif_path)
+  
+  terrain_results <- terrain(r, v = terrain_values, neighbors = 8)
+  
+  # Convert slope from radians to degrees
+  if ("slope" %in% names(terrain_results)) {
+    terrain_results$slope <- terrain_results$slope * (180 / pi)
+  }
+  
+  # Calculate northness and eastness from aspect
+  if ("aspect" %in% names(terrain_results)) {
+    aspect_rad <- terrain_results$aspect
+    northness <- cos(aspect_rad)
+    eastness <- sin(aspect_rad)
+  } else {
+    northness <- NA
+    eastness <- NA
+  }
+  
+  metrics_means <- c()
+  
+  # slope mean
+  metrics_means["slope"] <- ifelse("slope" %in% names(terrain_results),
+                                   mean(values(terrain_results$slope), na.rm = TRUE), NA)
+  
+  # northness and eastness means
+  metrics_means["northness"] <- ifelse(!all(is.na(northness)),
+                                       mean(values(northness), na.rm = TRUE), NA)
+  metrics_means["eastness"] <- ifelse(!all(is.na(eastness)),
+                                      mean(values(eastness), na.rm = TRUE), NA)
+  
+  # other terrain metrics means
+  other_metrics <- c("TPI", "TRI", "TRIriley", "TRIrmsd", "roughness")
+  for (m in other_metrics) {
+    if (m %in% names(terrain_results)) {
+      metrics_means[m] <- mean(values(terrain_results[[m]]), na.rm = TRUE)
+    } else {
+      metrics_means[m] <- NA
+    }
+  }
+  
+  results_list[[tif_path]] <- metrics_means
+}
+
+results_df <- do.call(cbind, results_list)
+colnames(results_df) <- basename(colnames(results_df))
+
+print(results_df)
 
 
 #RMNP ANALYSIS (ROCKY MOUNTAIN NATIONAL PARK) ----------------------------------
@@ -359,6 +501,105 @@ coordinates(centroid_sp) <- ~x+y
 proj4string(centroid_sp) <- CRS("+proj=utm +zone=13 +datum=WGS84 +units=m +no_defs")
 centroid_latlong <- spTransform(centroid_sp, CRS("+proj=longlat +datum=WGS84"))
 centroid_latlong
+
+
+###################MultiscaleDTM####################
+#https://cran.r-project.org/web/packages/MultiscaleDTM/MultiscaleDTM.pdf
+#Calculates multi-scale geomorphometric terrain attributes from regularly gridded digital terrain models using a variable focal windows size
+library(MultiscaleDTM)
+
+# create 11x11 grid over raster extent
+grid_sf <- st_make_grid(
+  st_as_sfc(st_bbox(r1)),   # convert raster extent to sf geometry
+  n = c(11, 11),             # 11x11 grid
+  what = "polygons"
+) |> st_as_sf()            # return as sf object
+st_crs(grid_sf) <- st_crs(r1) #coord system
+
+#fits a quadratic surface and can be used to calculate slope, aspect, curvatures, and provide a map of discrete landform classes
+#default 3x3 window
+#11x11 window
+qfit1<-Qfit(r1, w=3, metrics =c('profc'), slope_tolerance = 2, force_center=TRUE, include_scale=TRUE, na.rm=TRUE)
+plot(qfit1)
+
+profc <- qfit1$profc_3x3
+summary(profc)
+plot(profc)
+
+# Convert grid_sf to terra vector
+grid_vect <- vect(grid_sf)
+
+# Extract meanc for each polygon directly
+# This computes the mean of all raster cells inside each polygon
+vals <- terra::extract(qfit1$profc_3x3, grid_vect, fun = mean, na.rm = TRUE)
+
+# Attach to grid_sf
+grid_sf$meanc <- vals[,2] 
+
+ggplot() +
+  geom_sf(data = grid_sf, aes(fill = meanc), color = "black", linewidth = 0.3) +
+  scale_fill_viridis_c(option = "plasma", na.value = "grey90") +
+  labs(
+    title = "Local Mean Curvature (aggregated by 11×11 grid)",
+    fill = "Mean curvature"
+  ) +
+  theme_minimal()
+
+#do it for hexagons instead of the sf grid
+# Convert hexes_sf to terra vector
+hex_vect <- vect(hexes_sf)
+# Extract meanc for each polygon directly
+# This computes the mean of all raster cells inside each polygon
+vals_hex <- terra::extract(qfit1$profc_3x3, hex_vect, fun = mean, na.rm = TRUE)
+
+# Attach to hexes_sf
+hexes_sf$meanc <- vals_hex[,2]
+
+#summarize meanc
+summary(hexes_sf$meanc)
+
+#remove hexes greater than 3 SDs
+sd_meanc <- sd(hexes_sf$meanc, na.rm = TRUE)
+mean_meanc <- mean(hexes_sf$meanc, na.rm = TRUE)
+threshold_upper <- mean_meanc + 1 * sd_meanc
+threshold_lower <- mean_meanc - 1 * sd_meanc
+hexes_sf <- hexes_sf %>%
+  mutate(meanc = ifelse(meanc > threshold_upper | meanc < threshold_lower, NA, meanc))
+
+ggplot() +
+  geom_sf(data = hexes_sf, aes(fill = meanc), color = "black", linewidth = 0.3) +
+  scale_fill_viridis_c(option = "D", na.value = "grey90") +
+  labs(
+    title = "Local Mean Curvature (aggregated by hexagons)",
+    fill = "Mean curvature"
+  ) +
+  theme_minimal()
+
+#Calculating roughness via adjusted standard deviation
+adjsd1<-AdjSD(r1, include_scale=TRUE)
+plot(adjsd1)
+
+vals_adjsd <- terra::extract(adjsd1$AdjSD_3x3, hex_vect, fun = mean, na.rm = TRUE)
+
+# calculate metrics (ORNL) for for each grid
+for (i in seq_len(nrow(grid_sf))) {
+  sub_r <- crop(r1, vect(grid_sf[i, ]))
+  mat <- as.matrix(sub_r, wide = TRUE)
+  grid_sf$ORNL_profc_multiDTM[i] <- MultiscaleDTM::Qfit(mat)
+}
+
+######################SpatialEco###########################
+library(spatialEco)
+
+SpaEco_curv<-curvature(r1, type="profile")  #profile curvature from SpaEco package
+summary(values(SpaEco_curv))
+plot(SpaEco_curv, main="ORNL Profile curvature from SpatialEco package")
+
+SpaEco_curv_clip <- clamp(SpaEco_curv, lower=-0.01, upper=0.01)
+plot(SpaEco_curv_clip, zlim=c(-0.01, 0.01))
+
+
+
 
 
 
