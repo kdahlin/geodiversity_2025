@@ -22,14 +22,14 @@ options(scipen=999)
 # --------------------------------------------------
 
 # today's date
-date <- "20251114"
+date <- gsub("-", "", Sys.Date())
 
 # directory to save "raw" neon data to (working in github)
 save.directory <- "./NEON_data/"
 
 # site code and year
-site <- "CPER" 
-year <- "2020"  
+site <- "MLBS" 
+year <- "2022"  
 
 # make a directory for the data you eventually download
 dir.create(paste0(save.directory, site))
@@ -49,13 +49,17 @@ buffer = 3
 #epsg <- 32614
 
 # CPER
-epsg <- 32613
+#epsg <- 32613
 
 # RMNP
 #epsg <- 32613
 
 # ORNL
 #epsg <- 32616
+
+# MLBS
+epsg <- 32617
+
 
 # what is the approx centroid of where you want data from (in lat/lon)
 # four NEON sites are listed below
@@ -65,8 +69,8 @@ epsg <- 32613
 #lat <- 47.12000
 
 # CPER
-lon <- -104.74559
-lat <- 40.81554
+#lon <- -104.74559
+#lat <- 40.81554
 
 # RMNP
 #lon <- -105.5171737
@@ -75,6 +79,10 @@ lat <- 40.81554
 # ORNL
 #lon <- -84.3261184
 #lat <- 35.9337824
+
+# MLBS 
+lon <- -80.530259
+lat <- 37.383836 
 
 # --------------------------------
 # CREATE data frame OF PT LOCATION
