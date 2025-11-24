@@ -25,7 +25,9 @@ setwd("/Users/leobaldiga/Documents/GitHub/geodiversity_2025/")
 #Change this to the location of your own geodiv folder
 
 #Define NEON site location codes (processed_tifs/subdirectory names)
-locations <- c("ORNL", "RMNP", "CPER", "WOOD")
+locations <- c("ORNL", "RMNP", "CPER", "WOOD", 
+               "CLBJ", "MLBS", "OAES", "OSBS", 
+               "TEAK", "UNDE", "WREF")
 ################################################################## 
 
 #--------------------------
@@ -293,7 +295,6 @@ if (.Platform$OS.type == "windows") {
 
 # Combine moments results into a single data frame
 moments_results_df <- do.call(rbind, moments_results)
-print(moments_results_df)
 
 #reshape to be file, func, value
 moments_results_df <- moments_results_df %>%
@@ -302,6 +303,7 @@ moments_results_df <- moments_results_df %>%
     names_to = "func",
     values_to = "value"
   )
+print(moments_results_df)
 
 #--------------------------
 # CURVATURE METRICS USING SPATIALECO

@@ -16,7 +16,9 @@ library(tidyverse)
 #setwd("/Users/leobaldiga/Documents/GitHub/geodiversity_2025/") 
 
 #Define NEON site location codes (processed_tifs/subdirectory names)
-locations <- c("ORNL", "RMNP", "CPER", "WOOD")
+locations <- c("ORNL", "RMNP", "CPER", "WOOD", 
+               "CLBJ", "MLBS", "OAES", "OSBS", 
+               "TEAK", "UNDE", "WREF")
 
 # Define target resolutions in meters
 target_resolutions <- c(5, 10, 15, 30, 50, 100)
@@ -60,7 +62,7 @@ resample_and_save <- function(input_tif, resolutions) {
     
     # Output filename:
     out_file <- file.path(input_dir, paste0(file_base, "_", res, "m.tif"))
-    writeRaster(r_agg, filename = out_file, overwrite = TRUE)
+    writeRaster(r_agg, filename = out_file, overwrite = F)
     message("Saved aggregated raster to: ", out_file)
   }
 }
