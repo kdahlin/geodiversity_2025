@@ -81,7 +81,7 @@ scores <- as.data.frame(pca$x)
 
 # biplot
 fviz_pca_biplot(pca, repel = TRUE,                 
-                col.var = "#2E9FDF", # Variables color
+                col.var = "#2e9fdf", # Variables color
                 col.ind = "#696969")  # Individuals color
 
 # let's look at how the PCs correlate with the variables
