@@ -51,19 +51,22 @@ cors <- cor(in.data.1m)
 x11()
 corrplot(cors, order = "FPC", method = "circle")
 
-### OPTIONAL - REMOVE HIGHLY CORRELATED VARIABLES AND WEIRD ONES
-remove.some <- c("stdv_1", "sq_1", "mad_1", "tri_1", "TRIriley_1", "TRIrmsd_1",
-                 "raster.entropy_1", "std_1", "sdc_1", "sdq6_1", "smean_1", 
-                 "tpi_1")
-
-remove.cols <- which(names(in.data.1m) %in% remove.some)
-
-small.data.1m <- in.data.1m[,-c(remove.cols)]
+# ### OPTIONAL - REMOVE HIGHLY CORRELATED VARIABLES AND WEIRD ONES
+# remove.some <- c("stdv_1", "sq_1", "mad_1", "tri_1", "TRIriley_1", "TRIrmsd_1",
+#                  "raster.entropy_1", "std_1", "sdc_1", "sdq6_1", "smean_1", 
+#                  "tpi_1")
+# 
+# remove.cols <- which(names(in.data.1m) %in% remove.some)
+# 
+# small.data.1m <- in.data.1m[,-c(remove.cols)]
 ##########
 
 # do pca
-pca <- prcomp(small.data.1m, center = TRUE, scale = TRUE)
+pca <- prcomp(in.data.1m, center = TRUE, scale = TRUE)
 
+scale.data.1m <- scale(in.data.1m, center = TRUE, scale = TRUE)
+
+pca.test <- princomp(scale.data.1m)
 # note some plotting from here on out using the factoextra package comes from 
 # scripts provided here: https://www.sthda.com/english/articles/31-principal-component-methods-in-r-practical-guide/112-pca-principal-component-analysis-essentials/
 
@@ -77,10 +80,11 @@ summary(pca)
 loadings <- pca$rotation
 
 # get the scores/PCs
-scores <- as.data.frame(pca$x)
+scores <- as.data.frame(summary(pca)$x)
+scores <- pca.test$scores
 
 # biplot
-fviz_pca_biplot(pca, repel = TRUE,                 
+fviz_pca_biplot(pca.test, repel = TRUE,                 
                 col.var = "#2e9fdf", # Variables color
                 col.ind = "#696969")  # Individuals color
 
@@ -91,7 +95,7 @@ x11()
 corrplot(pca.var$cos2, is.corr = FALSE)
 
 # I (Kyla) likes this better because I understand it, but weird about PC36!?
-pc.corrs <- cor(small.data.1m, scores)
+pc.corrs <- cor(scores, in.data.1m)
 corrplot(pc.corrs)
 
 # let's take a look
