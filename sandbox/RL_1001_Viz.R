@@ -303,6 +303,7 @@ library(ggplot2)
 library(cowplot)
 library(tidyr)
 library(ggrepel)
+library(ggbeeswarm)
 Metrics <- read_csv("results/all_metrics_wide.csv")
 View(Metrics)
 
@@ -318,7 +319,7 @@ Metrics_Long<- Metrics %>%
   select(metrics, value, Raster) %>%
   mutate(raster_id = substr(Raster, 1, 4),   # add new column with locations, ID first 4 letters in raster
          resolution = sub(".*_(\\d+)m\\.tif$", "\\1", Raster),     # extract number before "m.tif" 
-         index = sub(".*_(\\d+)_\\d+m\\.tif$", "\\1", Raster)) %>%  # second-to-last number   
+         Tile = sub(".*_(\\d+)_\\d+m\\.tif$", "\\1", Raster)) %>%  # second-to-last number   
   drop_na()  #remove NA values
 
 #filter resolutions
@@ -402,7 +403,6 @@ ggplot(Metrics_Long, aes(x = raster_id, y = value, fill = raster_id)) +
 ggsave("ViolinAll.png", width = 70 , height = 40 , units = "cm", bg = "white")
 
 #Beeswarm plot for all
-library(ggbeeswarm)
 ggplot(Metrics_LongRes, aes(x = raster_id, y = value, color = raster_id)) +
   geom_beeswarm() +
   facet_wrap(~ metrics, scales = "free_y") +  # one panel per metric
@@ -494,3 +494,28 @@ ggplot(All, aes(x = raster_id, y = value_scaled, color = raster_id)) +
 
 ggsave("Types.png", width = 30 , height = 20 , units = "cm")
 
+###Plot beeswarm for top 10 variables from PCA
+Metrics_LongRes_top <- Metrics_LongRes %>%
+  filter(metrics %in% c("eastness", "nmodes", "range", "raster.entropy", "sbi", "svk", "sku", "ssk", "std", "sbr", "tpi")) %>%
+  mutate(raster_id = factor(raster_id, levels = c("CPER", "WOOD", "ORNL", "RMNP")),
+         metrics = factor(metrics,
+                     levels = c("eastness", "nmodes", "range", "raster.entropy", "sbi", "svk", "sku", "ssk", "std", "stxr", "tpi"),
+                     labels = c("Aspect(eastness)", "nmodes", "Range", "raster.entropy", "Surface bearing", "Reduced valley depth", "Surface kurtosis", "Surface skewness", "Dominant texture direction", "Texture aspect ratio", "Topographic position")))
+ggplot(Metrics_LongRes_top %>%
+         mutate(raster_id = factor(raster_id, levels = c("CPER", "WOOD", "ORNL", "RMNP"))), 
+       aes(x = raster_id, y = value, color = raster_id, shape = Tile)) +
+  geom_beeswarm(size=3) +
+  facet_wrap(~ metrics, scales = "free_y", nrow=2) +  # metrics by type
+  theme_bw() +
+  scale_color_manual(values = c("CPER" = "aquamarine4", "ORNL" = "royalblue4", "RMNP"="purple3", "WOOD"="darkorange3"), guide="none") +
+  scale_shape_manual(name = "Tile",
+    values = c("1" = 1, "2" = 2, "3" = 0, "4" = 5, "5" = 16, "6" = 17, "7" = 18, "8" = 15, "9" = 4))+
+  labs(x = "", y = "", title = "") +
+  theme(legend.position = "right",
+        legend.text = element_text(size=25),
+        legend.title = element_text(size=30),
+        panel.grid.minor = element_blank(),
+        axis.text = element_text(size = 25),
+        strip.text = element_text(size = 30),
+        strip.background = element_rect(fill = "honeydew2"))
+ggsave("Top10.png", width = 30 , height = 15 , units = "cm")
