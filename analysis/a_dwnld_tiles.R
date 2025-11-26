@@ -1,8 +1,11 @@
+# ------------------------------------------------------------------------------
 # Title: Get NEON Lidar DEM
-# Date: 09/24/2025
-# Author: CNR adapted from KMD
-# Enter a geographic location to identify a set number of nearby
+# Date Created: 09/24/2025
+# Last Update: 11/25/2025
+# Authors: CNR adapted from KMD
+# Purpose: Enter a geographic location to identify a set number of nearby
 # NEON tiles, visualize them in GEE, and download to a folder
+# ------------------------------------------------------------------------------
 
 # load packages 
 library(sf)
@@ -14,15 +17,12 @@ library(cowplot)
 library(terra)
 library(neonUtilities)
 
-# Set working directory to your copy of the repo
-#setwd("C:/...")
-
 # prevent R from reporting values in scientific notation
 options(scipen=999)
 
-# --------------------------------------------------
+# ------------------------------------------------------------------------------
 # USER-DEFINED VARIABLES- should change before runs
-# --------------------------------------------------
+# ------------------------------------------------------------------------------
 
 # today's date
 date <- gsub("-", "", Sys.Date())
