@@ -36,5 +36,10 @@ for (variable in unique_variables){
   ggplot(data = subset)+
     geom_line(mapping = aes(x = res, y = norm_value*100, color = site, group = scene))+
     labs(x = "Pixel size (meters)", y = "% change relative to 1-meter pixel size", title = variable)
-  ggsave(str_glue("./sandbox/results/scales/{variable}.png"), width = 5, height = 3.5, units = "in", limitsize = FALSE)
+  ggsave(str_glue("./sandbox/results/scales/{variable}_normalized.png"), width = 5, height = 3.5, units = "in", limitsize = FALSE)
+  ggplot(data = subset)+
+    geom_line(mapping = aes(x = res, y = value, color = site, group = scene))+
+    labs(x = "Pixel size (meters)", y = "Value", title = variable)
+  ggsave(str_glue("./sandbox/results/scales/{variable}_rawvalue.png"), width = 5, height = 3.5, units = "in", limitsize = FALSE)
 }
+

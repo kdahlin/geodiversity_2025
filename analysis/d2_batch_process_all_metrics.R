@@ -378,6 +378,8 @@ lookup <- data.frame(
   site = c("ORNL",   "MLBS",   "CPER", "OAES", "CLBJ", "UNDE",   "WOOD",   "OSBS",   "RMNP",        "TEAK",        "WREF"),
   type = c("ridged", "ridged", "flat", "flat", "flat", "pitted", "pitted", "pitted", "high-relief", "high-relief", "high-relief")
 )
+long_df <- long_df %>%
+  left_join(lookup, by = "site")
 
 #make sure value is unlisted (no list cols)
 long_df$value <- unlist(long_df$value)
