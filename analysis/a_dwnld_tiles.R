@@ -73,7 +73,10 @@ buffer = 3
 #epsg <- 32610
 
 #TEAK
-epsg <- 32611
+#epsg <- 32611
+
+#CLBJ
+#epsg <- 32614
 
 
 # what is the approx centroid of where you want data from (in lat/lon)
@@ -118,6 +121,10 @@ epsg <- 32611
 # TEAK
 lon <- -119.029
 lat <- 37.040
+
+#CLBJ 
+#lon <- -97.606346
+#lat <- 33.371757
 
 # --------------------------------
 # CREATE data frame OF PT LOCATION
