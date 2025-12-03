@@ -10,12 +10,12 @@ library(rasterVis)
 
 setwd("C://Users/rache/Documents/geodiversity_2025/sandbox/")
 
-ORNL <- "C://Users/rache/Documents/geodiversity_2025/geodiversity_2025/processed_tifs/ORNL_2018_DEM_mosaic_20250925.tif"
-CPER <- "C://Users/rache/Documents/geodiversity_2025/processed_tifs/CPER_2020_DEM_mosaic_20251005.tif"
-RMNP <- "C://Users/rache/Documents/geodiversity_2025/processed_tifs/RMNP_2020_DEM_mosaic_20251005.tif"
+ORNL <- "C://Users/rache/Documents/geodiversity_2025/geodiversity_2025/processed_tifs/ORNL_2018_DEM_mosaic_2025-11-14_1_1m.tif"
+CPER <- "C://Users/rache/Documents/geodiversity_2025/processed_tifs/CPER/CPER_2020_DEM_mosaic_2025-11-14_9_1m.tif"
+RMNP <- "C://Users/rache/Documents/geodiversity_2025/processed_tifs/RMNP/RMNP_2020_DEM_mosaic_2025-11-14_2_1m.tif"
 WOOD <- "C://Users/rache/Documents/geodiversity_2025/processed_tifs/WOOD_2020_DEM_mosaic_20251005.tif"
 
-r1<-rast(ORNL)
+r1<-rast(CPER)
 plot(r1)
 summary(r1)
 min <- global(r1, fun = "min", na.rm = TRUE)
@@ -280,8 +280,6 @@ plot(moments_kurtosis)
 mean_kurtosis <- global(moments_skew, fun = "mean", na.rm = TRUE)
 mean_kurtosis
 
-
-
 ###################Others####################
 
 #texture direction metrics
@@ -304,7 +302,7 @@ library(cowplot)
 library(tidyr)
 library(ggrepel)
 library(ggbeeswarm)
-Metrics <- read_csv("results/all_metrics_wide.csv")
+Metrics <- read_csv("C:/Users/rache/Documents/geodiversity_2025/results/all_metrics_wide.csv") 
 View(Metrics)
 
 #Pivot data to format for plotting
@@ -494,22 +492,62 @@ ggplot(All, aes(x = raster_id, y = value_scaled, color = raster_id)) +
 
 ggsave("Types.png", width = 30 , height = 20 , units = "cm")
 
-###Plot beeswarm for top 10 variables from PCA
+###Plot beeswarm for top 6 variables from PCA
 Metrics_LongRes_top <- Metrics_LongRes %>%
-  filter(metrics %in% c("eastness", "nmodes", "range", "raster.entropy", "sbi", "svk", "sku", "ssk", "std", "sbr", "tpi")) %>%
-  mutate(raster_id = factor(raster_id, levels = c("CPER", "WOOD", "ORNL", "RMNP")),
+  filter(metrics %in% c("range", "slope", "sku", "stdv", "curvature.profile", "sfd" ,"stxr")) %>%
+  mutate(raster_id = factor(raster_id, levels = c("CPER", "OAES", "CLBJ",
+                                                  "WOOD", "OSBS","UNDE",
+                                                  "ORNL", "MLBS", 
+                                                  "RMNP", "TEAK", "WREF")),
          metrics = factor(metrics,
-                     levels = c("eastness", "nmodes", "range", "raster.entropy", "sbi", "svk", "sku", "ssk", "std", "stxr", "tpi"),
-                     labels = c("Aspect(eastness)", "nmodes", "Range", "raster.entropy", "Surface bearing", "Reduced valley depth", "Surface kurtosis", "Surface skewness", "Dominant texture direction", "Texture aspect ratio", "Topographic position")))
-ggplot(Metrics_LongRes_top %>%
-         mutate(raster_id = factor(raster_id, levels = c("CPER", "WOOD", "ORNL", "RMNP"))), 
-       aes(x = raster_id, y = value, color = raster_id, shape = Tile)) +
+                     levels = c("range", "slope", "sku", "stdv", "curvature.profile", "sfd" ,"stxr"),
+                     labels = c("Range", "Slope", "Surface kurtosis", "Standard deviation", 
+                                "Profile curvature", "Fractal dimension", "Texture aspect ratio")))
+ggplot(Metrics_LongRes_top, aes(x = raster_id, y = value, color = raster_id, shape = Tile)) +
   geom_beeswarm(size=3) +
   facet_wrap(~ metrics, scales = "free_y", nrow=2) +  # metrics by type
   theme_bw() +
-  scale_color_manual(values = c("CPER" = "aquamarine4", "ORNL" = "royalblue4", "RMNP"="purple3", "WOOD"="darkorange3"), guide="none") +
+  scale_color_manual(values = c("CPER" = "aquamarine4", "OAES" = "aquamarine4", "CLBJ" = "aquamarine4", 
+                                "ORNL" = "royalblue4", "MLBS" = "royalblue4", 
+                                "RMNP"="purple3", "TEAK"="purple3", "WREF"="purple3", 
+                                "WOOD"="darkorange3", "OSBS"="darkorange3", "UNDE"="darkorange3"), guide="none") +
   scale_shape_manual(name = "Tile",
     values = c("1" = 1, "2" = 2, "3" = 0, "4" = 5, "5" = 16, "6" = 17, "7" = 18, "8" = 15, "9" = 4))+
+  labs(x = "", y = "", title = "") +
+  theme(legend.position = c(0.8, 0.22),
+        legend.text = element_text(size=25),
+        legend.title = element_text(size=30),
+        panel.grid.minor = element_blank(),
+        axis.text = element_text(size = 25),
+        strip.text = element_text(size = 45),
+        strip.background = element_rect(fill = "honeydew2"))
+ggsave("Top6.png", width = 45 , height = 15 , units = "cm")
+
+###Plot beeswarm for top 12 variables from PCA
+Metrics_LongRes_top <- Metrics_LongRes %>%
+  filter(metrics %in% c("range", "curvature.total", "sbi", "stxr", "curvature.profile", "svk",
+                        "sku", "eastness", "northness", "nmodes", "raster.entropy", "srw")) %>%
+  mutate(raster_id = factor(raster_id, levels = c("CPER", "OAES", "CLBJ",
+                                                  "WOOD", "OSBS","UNDE",
+                                                  "ORNL", "MLBS",  
+                                                  "RMNP", "TEAK", "WREF")),
+         metrics = factor(metrics,
+                          levels = c("range", "curvature.total", "sbi", "stxr", "curvature.profile", "svk",
+                                     "sku", "eastness", "northness", "nmodes", "raster.entropy", "srw"),
+                          labels = c("Range", "Total curvature", "Surface bearing index", "Texture aspect ratio", 
+                                     "Profile curvature", "Reduced valley depth", "Surface kurtosis",
+                                     "Aspect (easting)", "Aspect (northing)",
+                                     "No. of modes", "Raster entropy", "Dominant radial wavelength")))
+ggplot(Metrics_LongRes_top, aes(x = raster_id, y = value, color = raster_id, shape = Tile)) +
+  geom_beeswarm(size=3) +
+  facet_wrap(~ metrics, scales = "free_y", nrow=3) +  # metrics by type
+  theme_bw() +
+  scale_color_manual(values = c("CPER" = "aquamarine4", "OAES" = "aquamarine4", "CLBJ" = "aquamarine4", 
+                                "ORNL" = "royalblue4", "MLBS" = "royalblue4", 
+                                "RMNP"="purple3", "TEAK"="purple3", "WREF"="purple3", 
+                                "WOOD"="darkorange3", "OSBS"="darkorange3", "UNDE"="darkorange3"), guide="none") +
+  scale_shape_manual(name = "Tile",
+                     values = c("1" = 1, "2" = 2, "3" = 0, "4" = 5, "5" = 16, "6" = 17, "7" = 18, "8" = 15, "9" = 4))+
   labs(x = "", y = "", title = "") +
   theme(legend.position = "right",
         legend.text = element_text(size=25),
@@ -518,4 +556,75 @@ ggplot(Metrics_LongRes_top %>%
         axis.text = element_text(size = 25),
         strip.text = element_text(size = 30),
         strip.background = element_rect(fill = "honeydew2"))
-ggsave("Top10.png", width = 30 , height = 15 , units = "cm")
+ggsave("Top12.png", width = 50 , height = 30 , units = "cm")
+
+###Data Exploration###
+Metrics_LongRes_test <- Metrics_LongRes %>% filter(metrics %in% c("range")) %>% filter(raster_id != "RMNP")
+ggplot(Metrics_LongRes_test, aes(x = raster_id, y = value, color = raster_id)) + geom_beeswarm(size=3)
+
+################### Resolutions ####################
+#Grouped and calculate mean for 9 tiles
+Metrics_Long_met <- Metrics_Long %>% group_by(metrics, raster_id, resolution) %>% 
+  summarise(mean = mean(value, na.rm = TRUE)) %>%
+  mutate(resolution = as.numeric(resolution))
+Metrics_Long_sa <- Metrics_Long_met %>% filter(metrics=="range")
+
+#Mean change over resolutions
+ggplot(Metrics_Long_sa, aes(x = resolution, y = mean, color = raster_id, group=raster_id)) +
+  geom_point() +
+  geom_line() +
+  theme_bw() +
+  scale_x_continuous(breaks = sort(unique(Metrics_Long_sa$resolution)))+
+  scale_color_manual(values = c("CPER" = "aquamarine4", "OAES" = "aquamarine4", "CLBJ" = "aquamarine4", 
+                                "ORNL" = "royalblue4", "MLBS" = "royalblue4", 
+                                "RMNP"="purple3", "TEAK"="purple3", "WREF"="purple3", 
+                                "WOOD"="darkorange3", "OSBS"="darkorange3", "UNDE"="darkorange3"))
+
+ggplot(Metrics_Long_met, aes(x = resolution, y = mean, color = raster_id, group=raster_id)) +
+  geom_point() +
+  geom_line() +
+  facet_wrap(~ metrics, scales = "free_y") +
+  scale_x_continuous(breaks = sort(unique(Metrics_Long_sa$resolution)))+
+  theme_bw() +
+  scale_color_manual(values = c("CPER" = "aquamarine4", "OAES" = "aquamarine4", "CLBJ" = "aquamarine4", 
+                                "ORNL" = "royalblue4", "MLBS" = "royalblue4", 
+                                "RMNP"="purple3", "TEAK"="purple3", "WREF"="purple3", 
+                                "WOOD"="darkorange3", "OSBS"="darkorange3", "UNDE"="darkorange3"))+
+  labs(x = "", y = "", title = "Mean change over resolutions") +
+  theme(title = element_text(size=60),
+        legend.text = element_text(size=35),
+        legend.title = element_text(size=40),
+        axis.text = element_text(size = 35),
+        strip.text = element_text(size = 40))
+ggsave("MeanChangeResolutions.png", width = 70 , height = 40 , units = "cm", bg = "white")
+
+#Percent change relative to 1 m resolution
+Metrics_Long_Percent <- Metrics_Long %>%
+  group_by(metrics, raster_id, resolution) %>%
+  summarise(mean = mean(value, na.rm = TRUE), .groups = "drop") %>%
+  mutate(resolution = as.numeric(resolution)) %>%
+  group_by(metrics, raster_id) %>%
+  mutate(
+    mean_1m = mean[resolution == 1],
+    pct_change = ((mean - mean_1m) / mean_1m) * 100
+  ) %>%
+  ungroup()
+
+ggplot(Metrics_Long_Percent, aes(x = resolution, y = pct_change, color = raster_id, group=raster_id)) +
+  geom_point() +
+  geom_line() +
+  facet_wrap(~ metrics, scales = "free_y") +
+  scale_x_continuous(breaks = sort(unique(Metrics_Long_sa$resolution)))+
+  theme_bw() +
+  scale_color_manual(values = c("CPER" = "aquamarine4", "OAES" = "aquamarine4", "CLBJ" = "aquamarine4", 
+                                "ORNL" = "royalblue4", "MLBS" = "royalblue4", 
+                                "RMNP"="purple3", "TEAK"="purple3", "WREF"="purple3", 
+                                "WOOD"="darkorange3", "OSBS"="darkorange3", "UNDE"="darkorange3"))+
+  labs(x = "", y = "", title = "% mean change relative to 1m resolution") +
+  theme(title = element_text(size=60),
+        legend.text = element_text(size=35),
+        legend.title = element_text(size=40),
+        axis.text = element_text(size = 35),
+        strip.text = element_text(size = 40))
+
+ggsave("MeanChangeResolutions_Percent.png", width = 70 , height = 40 , units = "cm", bg = "white")
