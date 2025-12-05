@@ -59,13 +59,13 @@ which.var <- which(variances == 0)
 in.data.1m <- in.data.1m[,-(which.var)]
 
 # look at correlations
-cors <- cor(in.data.1m)
+cors <- cor(in.data.1m, method = "spearman")
 
 write.csv(cors, "./sandbox/results/correlation_matrix_1m.csv", row.names = TRUE)
 
 # visualize with corrplot
 x11()
-corrplot(cors, order = "FPC", method = "circle")
+corrplot(cors, order = "FPC", method = "circle", type = "lower")
 
 ### OPTIONAL - REMOVE HIGHLY CORRELATED VARIABLES AND WEIRD ONES
 remove.some <- c("tri_1", "tpi_1", "sq_1", "sa_1", "s10z_1", "sdq6_1", "sph_1", 
