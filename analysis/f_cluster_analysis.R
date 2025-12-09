@@ -103,9 +103,7 @@ dev.off()
 hc_spearmans <- vc_spearmans$hclust
 hc_spearmans
 
-# Example: cut at height corresponding roughly to |r| >= 0.9
-# varclus uses 1 - R^2 as height, so R^2 = 0.9^2 = 0.81 -> height ~ 1 - 0.81 = 0.19
-clust_vc_spear <- cutree(hc_spearmans, k = 5)
+clust_vc_spear <- cutree(hc_spearmans, k = 7)
 clusters_vc_spear <- split(names(clust_vc_spear), clust_vc_spear)
 clusters_vc_spear
 
@@ -123,18 +121,19 @@ hc_pearson <- vc_pearson$hclust
 hc_pearson
 # Example: cut at height corresponding roughly to |r| >= 0.9
 # varclus uses 1 - R^2 as height, so R^2 = 0.9^2 = 0.81 -> height ~ 1 - 0.81 = 0.19
-clust_vc_pear <- cutree(hc_pearson, k = 5)
+clust_vc_pear <- cutree(hc_pearson, k = 7)
 clusters_vc_pear <- split(names(clust_vc_pear), clust_vc_pear)
 clusters_vc_pear
 
 # K-means clustering of sites ----
 set.seed(123) # for reproducibility
-png(filename = "./results/kmeans_screeplot_1_20_centers.png", 
+png(filename = "./results/kmeans_screeplot_1_40_centers.png", 
     width = 10, height = 8, units = "in", res = 300)
 fviz_nbclust(small.data.1m.z, kmeans,
              method = "wss",     # elbow: total within‑cluster SS
-             k.max = 20) +       # adjust upper bound as needed
-  labs(title = "Elbow method for k-means")
+             k.max = 40) +       # adjust upper bound as needed
+  labs(title = "Scree plot of k-means within cluster sum of squares",
+       )
 dev.off()
 
 k_range <- 1:40  
