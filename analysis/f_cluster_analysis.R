@@ -61,7 +61,7 @@ in.data.1m <- in.data.1m[,-(which.var)]
 # look at correlations
 cors <- cor(in.data.1m)
 
-#write.csv(cors, "./sandbox/results/correlation_matrix_1m.csv", row.names = TRUE)
+#write.csv(cors, "./results/correlation_matrix_1m.csv", row.names = TRUE)
 
 # visualize with corrplot
 corrplot(cors, order = "FPC", method = "circle")
@@ -94,7 +94,7 @@ corrplot(cors, order = "FPC", method = "circle")
 vc_spearmans <- varclus(~ ., data = small.data.1m.z , similarity = "spearman") 
 
 #Plot dendrogram (axes show 1 - R^2 with own cluster)
-png(filename = "./sandbox/results/varclus_spearmans_1m.png",
+png(filename = "./results/varclus_spearmans_1m.png",
     width = 12, height = 8, units = "in", res = 300)
 plot(vc_spearmans, main = "Hmisc::varclus variable clustering")
 dev.off()
@@ -113,7 +113,7 @@ clusters_vc_spear
 vc_pearson <- varclus(~ ., data = small.data.1m.z , similarity = "pearson")
 
 #Plot dendrogram (axes show 1 - R^2 with own cluster)
-png(filename = "./sandbox/results/varclus_pearson_1m.png",
+png(filename = "./results/varclus_pearson_1m.png",
     width = 12, height = 8, units = "in", res = 300)
 plot(vc_pearson, main = "Hmisc::varclus variable clustering (Pearson)")
 dev.off()
@@ -129,7 +129,7 @@ clusters_vc_pear
 
 # K-means clustering of sites ----
 set.seed(123) # for reproducibility
-png(filename = "./sandbox/results/kmeans_screeplot_1_20_centers.png", 
+png(filename = "./results/kmeans_screeplot_1_20_centers.png", 
     width = 10, height = 8, units = "in", res = 300)
 fviz_nbclust(small.data.1m.z, kmeans,
              method = "wss",     # elbow: total within‑cluster SS
@@ -174,18 +174,18 @@ for (i in seq_along(variable_clusters_km)) {
 }
 
 #export to excel for table viewing
-write.csv(variable_clusters_km_df, "./sandbox/results/kmeans_clusters_k11_table.csv",
+write.csv(variable_clusters_km_df, "./results/kmeans_clusters_k11_table.csv",
           row.names = FALSE)
 
 # Visualize k-means clustering results of Principal Components
-png(filename = "./sandbox/results/kmeans_clustering_1m_PC1_2.png", width = 10, height = 8, units = "in", res = 300)
+png(filename = "./results/kmeans_clustering_1m_PC1_2.png", width = 10, height = 8, units = "in", res = 300)
 fviz_cluster(kmeans_result, data = small.data.1m.z,
              palette = "jco",
              title = "K-means Clustering of sites (PC 1,2) (k=11, 100 iterations, 25 starts)",
              ggtheme = theme_minimal())
 dev.off()
 
-png(filename = "./sandbox/results/kmeans_clustering_1m_PC1_3.png", width = 10, height = 8, units = "in", res = 300)
+png(filename = "./results/kmeans_clustering_1m_PC1_3.png", width = 10, height = 8, units = "in", res = 300)
 fviz_cluster(kmeans_result, data = small.data.1m.z,
              palette = "jco",
              title = "K-means Clustering of sites (PC 1,3) (k=11, 100 iterations, 25 starts)",
@@ -193,7 +193,7 @@ fviz_cluster(kmeans_result, data = small.data.1m.z,
              ggtheme = theme_minimal())
 dev.off()
 
-png(filename = "./sandbox/results/kmeans_clustering_1m_PC2_3.png", width = 10, height = 8, units = "in", res = 300)
+png(filename = "./results/kmeans_clustering_1m_PC2_3.png", width = 10, height = 8, units = "in", res = 300)
 fviz_cluster(kmeans_result, data = small.data.1m.z,
              palette = "jco",
              title = "K-means Clustering of sites (PC 2,3) (k=11, 100 iterations, 25 starts)",
@@ -230,7 +230,7 @@ dend_col <- color_branches(dend, k = k)
 #color labels to match branches
 dend_col <- color_labels(dend_col, k = k)
 
-png("./sandbox/results/hierarchical_clustering_1m_wardsD2_colored.png",
+png("./results/hierarchical_clustering_1m_wardsD2_colored.png",
     width = 20, height = 10, units = "in", res = 300)
 plot(dend_col, main = "Ward's D minimum variance (k=11)",
      xlab = "Sites", ylab = "Height")
