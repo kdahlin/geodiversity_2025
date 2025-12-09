@@ -1,11 +1,9 @@
-#LAB CFA and CLUSTER ANALYSIS FUNTIMES
+#CLUSTER ANALYSIS
+#Written by: Leo Baldiga (borrowing some of Kyla's Code for data preparation)
 
+#load libraries
 library(corrplot)
 library(factoextra)
-library(FactoMineR)
-library(lavaan)
-library(semPlot)
-library(psych)
 library(Hmisc)
 library(plotly)
 library(dendextend)
@@ -96,34 +94,38 @@ corrplot(cors, order = "FPC", method = "circle")
 vc_spearmans <- varclus(~ ., data = small.data.1m.z , similarity = "spearman") 
 
 #Plot dendrogram (axes show 1 - R^2 with own cluster)
+png(filename = "./sandbox/results/varclus_spearmans_1m.png",
+    width = 12, height = 8, units = "in", res = 300)
 plot(vc_spearmans, main = "Hmisc::varclus variable clustering")
+dev.off()
+
+#Extract the hclust object and cut the tree to see clusters
+hc_spearmans <- vc_spearmans$hclust
+hc_spearmans
+
+# Example: cut at height corresponding roughly to |r| >= 0.9
+# varclus uses 1 - R^2 as height, so R^2 = 0.9^2 = 0.81 -> height ~ 1 - 0.81 = 0.19
+clust_vc_spear <- cutree(hc_spearmans, k = 5)
+clusters_vc_spear <- split(names(clust_vc_spear), clust_vc_spear)
+clusters_vc_spear
 
 #Using pearson and Hmisc::varclus
 vc_pearson <- varclus(~ ., data = small.data.1m.z , similarity = "pearson")
 
 #Plot dendrogram (axes show 1 - R^2 with own cluster)
+png(filename = "./sandbox/results/varclus_pearson_1m.png",
+    width = 12, height = 8, units = "in", res = 300)
 plot(vc_pearson, main = "Hmisc::varclus variable clustering (Pearson)")
-
+dev.off()
 
 #Extract the hclust object and cut the tree
-hc <- vc$hclust
-
-#change hc to data frame for easier viewing
-hc_df <- as.data.frame(hc$labels)
-hc_df$height <- hc$height
-hc_df$order <- seq(1, nrow(hc_df))
-rownames(hc_df) <- hc$labels
-
+hc_pearson <- vc_pearson$hclust
+hc_pearson
 # Example: cut at height corresponding roughly to |r| >= 0.9
 # varclus uses 1 - R^2 as height, so R^2 = 0.9^2 = 0.81 -> height ~ 1 - 0.81 = 0.19
-clust_vc <- cutree(hc, k = 5)
-clusters_vc <- split(names(clust_vc), clust_vc)
-clusters_vc
-
-# varclus uses 1 - R^2 as height, so R^2 = 0.9^2 = 0.81 -> height ~ 1 - 0.81 = 0.19
-clust_vc_7 <- cutree(hc, k = 7)
-clusters_vc <- split(names(clust_vc_7), clust_vc_7)
-clusters_vc
+clust_vc_pear <- cutree(hc_pearson, k = 5)
+clusters_vc_pear <- split(names(clust_vc_pear), clust_vc_pear)
+clusters_vc_pear
 
 # K-means clustering of sites ----
 set.seed(123) # for reproducibility
@@ -239,77 +241,4 @@ hc_clusters <- cutree(hc_km, k = k)
 variable_clusters_hc <- split(names(hc_clusters), hc_clusters)
 variable_clusters_hc
 
-#Run Factor Analysis (using psych package) -----
-
-#Minres factoring with varimax rotation
-fa.parallel(small.data.1m.z, fa = "fa", fm ="minres", n.iter = 100, show.legend = FALSE)
-fa.results.minres <- fa(small.data.1m.z, nfactors = 5, rotate = "varimax", fm = "minres")
-print(fa.results.minres)
-fa.diagram(fa.results.minres, main = "Factor Analysis (Minres, Varimax Rotation)")
-
-#get factors and loadings as a table
-fa_loadings <- as.data.frame(fa.results.minres$loadings[1:ncol(small.data.1m.z),])
-fa_loadings <- fa_loadings[, c(ncol(fa_loadings), 1:(ncol(fa_loadings)-1))]
-
-#nmodes, sku, and eastness don't load well on any factors - remove from SEM specification
-vars_for_sem <- c("sdq_1", "slope_1", "sar_1", "range_1", "stdv_1",
-                  "mad_1", "sk_1", "spk_1", "sdc_1", "vrm_1", "svk_1",
-                  "srw_3", "sdr_1", "std_2", "ssc_1", "sfd_1", "sds_1",
-                  "srw_2", "curvature_planform_1", "curvature_profile_1",
-                  "curvature_total_1", "raster.entropy_1", "sci_1",
-                  "sv_1", "smean_1", "sbi_1", "northness_1",
-                  "stxr_2", "stxr_1", "TPI_1", "ssk_1")
-sem_data <- small.data.1m.z[, vars_for_sem]
-
-library(Matrix)
-S <- cov(sem_data, use = "pairwise.complete.obs")
-S_pd <- as.matrix(nearPD(S, keepDiag = TRUE)$mat)
-
-#specify SEM Using MRs from FA
-sem_model <- '
-MR1 =~ sdq_1 + slope_1 + sar_1 + range_1 + stdv_1 + mad_1 + sk_1 + spk_1 + sdc_1 + vrm_1 + svk_1
-MR2 =~ srw_3 + sdr_1 + std_2 + ssc_1 + sfd_1 + sds_1 + srw_2
-MR3 =~ curvature_planform_1 + curvature_profile_1 + curvature_total_1 + raster.entropy_1 
-MR4 =~ sci_1 + sv_1 + smean_1 + sbi_1 + northness_1 
-MR5 =~ stxr_2 + stxr_1 + TPI_1 + ssk_1
-'
-fit <- sem(sem_model, sample.cov = S_pd,
-           sample.nobs = nrow(sem_data),
-           meanstructure = FALSE)
-summary(fit, fit.measures = TRUE, standardized = TRUE)
-
-est <- parameterEstimates(fit)
-est[est$op == "~~" & est$lhs == est$rhs & est$est < 0, ]
-
-semPaths(
-  fit,
-  whatLabels = "std",
-  layout = "tree",
-  edge.label.cex = 0.8,
-  sizeMan = 5,
-  sizeLat = 7,
-  nCharNodes = 0,
-  title = FALSE
-)
-
-sem_model_reduced <- '
-  MR1 =~ sdq_1 + slope_1 + sar_1 + range_1 + stdv_1 + mad_1 + sk_1 + spk_1 + sdc_1 + vrm_1 + svk_1
-  MR2 =~ srw_3 + sdr_1 + std_2 + ssc_1 + sfd_1 + sds_1 + srw_2
-  MR3 =~ curvature_planform_1 + curvature_profile_1 + raster.entropy_1
-  MR4 =~ sci_1 + sv_1 + smean_1 + sbi_1 + northness_1
-  MR5 =~ stxr_1 + TPI_1 + ssk_1
-'
-fit2 <- sem(sem_model_reduced, data = sem_data)  # or with S_pd if still needed
-summary(fit2, fit.measures = TRUE, standardized = TRUE)
-est2 <- parameterEstimates(fit2)
-est2[est2$op == "~~" & est2$lhs == est2 $rhs & est2$est < 0, ]
-semPaths(
-  fit2,
-  whatLabels = "std",
-  layout = "tree",
-  edge.label.cex = 0.8,
-  sizeMan = 5,
-  sizeLat = 7,
-  nCharNodes = 0,
-  title = FALSE
-)
+#END OF SCRIPT
