@@ -88,8 +88,8 @@ cl.metrics <- hdbscan(small.data.t, minPts = 2)
 print(cl.metrics)
 plot(cl.metrics, show_flat = TRUE)
 metric.clusters <- cbind(rownames(small.data.t), cl.metrics$cluster)
-plot(small.data.1m$range_1, small.data.1m$curvature_total_1,
-     col = cl$cluster+1)
+plot(small.data.t$range_1, small.data.t$curvature_total_1,
+     col = cl.metrics$cluster+1)
 
 ######################### 
 # cluster on PCA metrics - not sure if this is bananas.
