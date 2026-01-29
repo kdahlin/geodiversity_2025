@@ -7,11 +7,47 @@ library(tidyr)
 library(ggrepel)
 library(ggbeeswarm)
 
-Metrics <- read_csv("C:/Users/rache/Documents/geodiversity_2025/results/all_metrics_wide.csv") 
+Metrics <- read_csv("./results/all_metrics_wide.csv") 
 View(Metrics)
 
+
+remove.metrics <- c("sa_1", "sq_1", "s10z_1", "sdq6_1", "sph_1", "svi_1", "scl_1",
+                    "TRI_1", "TRIriley_1", "TRIrmsd_1", "roughness_1",
+                    "std_1", "TPI_1", "tri_1")
+
+check <- !(Metrics$func %in% remove.metrics)
+Metrics.sub <- filter(Metrics, check)
+
+# do some renaming
+i <- which(Metrics.sub$func == "srw_1")
+Metrics.sub$func[i] <- "srw1"
+
+i <- which(Metrics.sub$func == "srw_2")
+Metrics.sub$func[i] <- "srw2"
+
+i <- which(Metrics.sub$func == "srw_3")
+Metrics.sub$func[i] <- "srw3"
+
+i <- which(Metrics.sub$func == "curvature_profile_1")
+Metrics.sub$func[i] <- "Profile Curvature"
+
+i <- which(Metrics.sub$func == "curvature_planform_1")
+Metrics.sub$func[i] <- "Planform Curvature"
+
+i <- which(Metrics.sub$func == "curvature_total_1")
+Metrics.sub$func[i] <- "Total Curvature"
+
+i <- which(Metrics.sub$func == "stxr_1")
+Metrics.sub$func[i] <- "stxr1"
+
+i <- which(Metrics.sub$func == "stxr_2")
+Metrics.sub$func[i] <- "stxr2"
+
+i <- which(Metrics.sub$func == "scl_2")
+Metrics.sub$func[i] <- "scl2"
+
 #Pivot data to format for plotting
-Metrics_Long<- Metrics %>%
+Metrics_Long<- Metrics.sub %>%
   mutate(func = gsub("_.*", "", func)) %>%  # remove anything after the first "_" from func column
   pivot_longer(
     cols = -func,               # except first row
@@ -28,20 +64,6 @@ Metrics_Long<- Metrics %>%
 #filter resolutions
 Metrics_LongRes <- Metrics_Long %>% filter(resolution==1)
 
-#Boxplot for all
-ggplot(Metrics_LongRes, aes(x = raster_id, y = value, color = raster_id)) +
-  geom_boxplot(outlier.colour = "black", outlier.size = 1) +
-  geom_dotplot(binaxis = 'y', stackdir = 'center', dotsize = 0.8) +
-  facet_wrap(~ metrics, scales = "free_y") +  # one panel per metric
-  scale_color_manual(values = c("CPER" = "aquamarine4", "ORNL" = "royalblue4", "RMNP"="purple3", "WOOD"="darkorange3"))+
-  labs(x = "Raster ID",
-       y = "Value",
-       title = "Metrics Across 4 different surfaces") +
-  theme_minimal() +
-  theme(panel.grid.minor = element_blank(),
-        panel.grid.major = element_line(color = "grey80"))
-ggsave("BoxplotAll.png", width = 70 , height = 40 , units = "cm", bg = "white")
-
 #Identify Outliers
 findoutlier <- function(x) {    #Define function to identify outlier
   return(x < quantile(x, .25) - 1.5*IQR(x) | x > quantile(x, .75) + 1.5*IQR(x))
@@ -49,61 +71,6 @@ findoutlier <- function(x) {    #Define function to identify outlier
 Metrics_LongRes <- Metrics_LongRes %>%    #Include new columns that shows if observation is an outlier
   group_by(metrics, raster_id) %>%
   mutate(outlier = ifelse(findoutlier(value), value, NA))
-
-#filter data per metrics
-type1 <- Metrics_LongRes %>%
-  filter(metrics %in% c("s10z", "sdq6", "smean", "sph", "sv", "svk"))
-type2 <- Metrics_LongRes %>%
-  filter(metrics %in% c("mad", "range","roughness", 
-                        "sdc", "sdq", "sk", "slope", "spk", "stdv",
-                        "tri", "TRI", "TRIriley", "TRIrmsd", "vrm", "sa", "sq"))
-type3 <- Metrics_LongRes %>%
-  filter(metrics %in% c("scl", "sku", "srw", "raster.entropy", "stxr"))
-type4 <- Metrics_LongRes %>%
-  filter(metrics %in% c("sfd", "sci", "svi","tpi", "TPI"))
-type5 <- Metrics_LongRes %>%
-  filter(metrics %in% c("sbi", "ssk"))
-type6 <- Metrics_LongRes %>%
-  filter(metrics %in% c("northness", "sdr","curvature", "sds"))
-type7 <- Metrics_LongRes %>%
-  filter(!metrics %in% c("s10z", "sdq6", "smean", "sph", "sv", "svk",
-                         "mad", "range", "roughness", "sdc", "sdq", "sk", "slope", "spk", "stdv",
-                         "tri", "TRI", "TRIriley", "TRIrmsd", "vrm", "sa", "sq",
-                         "scl", "sku", "srw", "raster.entropy", "stxr", 
-                         "sfd", "sci", "svi","tpi", "TPI",
-                         "sbi", "ssk",
-                         "northness", "sdr", "curvature", "sds"))
-
-#Boxplots by types
-ggplot(type6, aes(x = raster_id, y = value, color = raster_id)) +
-  geom_boxplot() +
-  geom_text_repel(data = subset(type6, !is.na(outlier)),
-            aes(label = index),
-            hjust = -0.8) +
-  facet_wrap(~ metrics, scales = "free_y") +  # one panel per metric
-  theme_minimal() +
-  scale_color_manual(values = c("CPER" = "aquamarine4", "ORNL" = "royalblue4", "RMNP"="purple3", "WOOD"="darkorange3"))+
-  labs(x = "", y = "", title = "") +
-  theme(legend.position="none",
-        axis.text = element_text(size=6))
-
-ggsave("Boxplot6.png", width = 13.5 , height = 10 , units = "cm")
-ggsave("Boxplot5.png", width = 13.5 , height = 6 , units = "cm")
-
-#Violin plot for all
-ggplot(Metrics_Long, aes(x = raster_id, y = value, fill = raster_id)) +
-  geom_violin(trim=FALSE, alpha=0.5) +
-  geom_boxplot(width=0.1) +
-  facet_wrap(~ metrics, scales = "free_y") +  # one panel per metric
-  scale_fill_manual(values = c("CPER" = "aquamarine4", "ORNL" = "royalblue4", "RMNP"="purple3", "WOOD"="darkorange3"))+
-  labs(x = "Raster ID",
-       y = "Value",
-       title = "Metrics Across 4 different surfaces") +
-  theme_minimal() +
-  theme(panel.grid.minor = element_blank(),
-        panel.grid.major = element_line(color = "grey80"))
-
-ggsave("ViolinAll.png", width = 70 , height = 40 , units = "cm", bg = "white")
 
 #Beeswarm plot for all
 ggplot(Metrics_LongRes, aes(x = raster_id, y = value, color = raster_id)) +
@@ -197,36 +164,51 @@ ggplot(All, aes(x = raster_id, y = value_scaled, color = raster_id)) +
 
 ggsave("Types.png", width = 30 , height = 20 , units = "cm")
 
-###Plot beeswarm for top 6 variables from PCA
-Metrics_LongRes_top <- Metrics_LongRes %>%
-  filter(metrics %in% c("range", "slope", "sku", "stdv", "curvature.profile", "sfd" ,"stxr")) %>%
+
+
+###Plot beeswarm for all variables
+Metrics_LongRes_all <- Metrics_LongRes %>%
   mutate(raster_id = factor(raster_id, levels = c("CPER", "OAES", "CLBJ",
                                                   "WOOD", "OSBS","UNDE",
-                                                  "ORNL", "MLBS", 
-                                                  "RMNP", "TEAK", "WREF")),
+                                                  "ORNL", "MLBS",  "RMNP", 
+                                                  "TEAK", "WREF")),
          metrics = factor(metrics,
-                     levels = c("range", "slope", "sku", "stdv", "curvature.profile", "sfd" ,"stxr"),
-                     labels = c("Range", "Slope", "Surface kurtosis", "Standard deviation", 
-                                "Profile curvature", "Fractal dimension", "Texture aspect ratio")))
-ggplot(Metrics_LongRes_top, aes(x = raster_id, y = value, color = raster_id, shape = Tile)) +
+                          levels = c("range", "smean", "svk", "spk", "mad",
+                                     "slope", "northness", "eastnesss", "sdq",
+                                     "sdr", "sar",
+                                     "sbi", "sci", "ssk", "sku", "sds", "svi",
+                                     "sdc", "nmodes",
+                                     "ssc", "Profile Curvature", "Planform Curvature",
+                                     "Total Curvature",
+                                     "sk", "stdv", "vrm", "tpi",
+                                     "sfd", "srw1", "srw2", "srw3", "raster.entropy", 
+                                     "std", "stxr1", "stxr2", "scl2")
+         ))
+
+ggplot(Metrics_LongRes_all, aes(x = raster_id, y = value, color = raster_id, shape = Tile)) +
   geom_beeswarm(size=3) +
-  facet_wrap(~ metrics, scales = "free_y", nrow=2) +  # metrics by type
+  facet_wrap(~ metrics, scales = "free_y", nrow=6) +  # metrics by type
   theme_bw() +
   scale_color_manual(values = c("CPER" = "aquamarine4", "OAES" = "aquamarine4", "CLBJ" = "aquamarine4", 
                                 "ORNL" = "royalblue4", "MLBS" = "royalblue4", 
                                 "RMNP"="purple3", "TEAK"="purple3", "WREF"="purple3", 
                                 "WOOD"="darkorange3", "OSBS"="darkorange3", "UNDE"="darkorange3"), guide="none") +
   scale_shape_manual(name = "Tile",
-    values = c("1" = 1, "2" = 2, "3" = 0, "4" = 5, "5" = 16, "6" = 17, "7" = 18, "8" = 15, "9" = 4))+
-  labs(x = "", y = "", title = "") +
-  theme(legend.position = c(0.8, 0.22),
+                     values = c("1" = 1, "2" = 2, "3" = 0, "4" = 5, "5" = 16, "6" = 17, "7" = 18, "8" = 15, "9" = 4))+
+  labs(x = "", y = "", title = "")
+
+
++
+  theme(legend.position = "right",
         legend.text = element_text(size=25),
         legend.title = element_text(size=30),
         panel.grid.minor = element_blank(),
         axis.text = element_text(size = 25),
-        strip.text = element_text(size = 45),
+        strip.text = element_text(size = 30),
         strip.background = element_rect(fill = "honeydew2"))
-ggsave("Top6.png", width = 45 , height = 15 , units = "cm")
+
+
+
 
 ###Plot beeswarm for top 12 variables from PCA
 Metrics_LongRes_top <- Metrics_LongRes %>%
@@ -266,6 +248,28 @@ ggsave("Top12.png", width = 50 , height = 30 , units = "cm")
 ###Data Exploration###
 Metrics_LongRes_test <- Metrics_LongRes %>% filter(metrics %in% c("range")) %>% filter(raster_id != "RMNP")
 ggplot(Metrics_LongRes_test, aes(x = raster_id, y = value, color = raster_id)) + geom_beeswarm(size=3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ################### Resolutions ####################
 #Grouped and calculate mean for 9 tiles
