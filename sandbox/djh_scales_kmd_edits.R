@@ -4,11 +4,6 @@ library(openxlsx2)
 library(stringr) #Allows python-style string formatting
 library(dplyr)
 
-#####################################################################
-#Set working directory
-setwd("C:/Users/hallerdi/Documents/Dillon_Classes/geodiversity_2025")
-#####################################################################
-
 # read in the long data
 in.data <- read.csv("./results/all_metrics_long.csv")
 
@@ -40,6 +35,29 @@ scale.norm.data <- in.data %>%
     norm_value = (value - min) / (max - min)
   ) %>%
   ungroup() 
+
+i <- 48
+subset <- in.data[in.data$func==unique_variables[i],]
+subset %>%
+  group_by(res, site) %>%
+  mutate(mean.value = mean(value),
+         plus.sd = mean(mean.value) + sd(value),
+         minus.sd = mean(mean.value) - sd(value)) %>%
+  ggplot(., aes(group = site, fill = site)) +
+    geom_ribbon(mapping = aes(x = res, ymin = minus.sd, 
+                            ymax = plus.sd), alpha = 0.2) +
+  geom_line(aes(x = res, y = mean.value, color = site), 
+            linewidth = 2) +
+  labs(x = "Pixel size (meters)", y = "Actual Value", 
+       title = unique_variables[i]) +
+  theme_bw()+
+  facet_grid(site~.)
+  
+
+ggplot(data = subset) +
+  geom_line(mapping = aes(x = res, y = value, color = site, group = scene)) +
+  labs(x = "Pixel size (meters)", y = "Actual Value", 
+       title = unique_variables[i])
 
 
 #Iterate over variables, saving out a raw value and a normalized value for each metric
