@@ -76,8 +76,8 @@ Metrics_LongRes_all <- Metrics_LongRes %>%
                                      "ssc", "Profile Curvature", "Planform Curvature",
                                      "Total Curvature",
                                      "sk", "stdv", "vrm", "tpi",
-                                     "sfd", "srw1", "srw2", "srw3", "raster.entropy", 
-                                     "std", "stxr1", "stxr2", "scl2")
+                                     "sfd", "srw2", "srw3", "raster.entropy", 
+                                     "std", "stxr1", "stxr2")
          ))
 
 x <- ggplot(Metrics_LongRes_all, aes(x = raster_id, y = value, color = raster_id, shape = Tile)) +
