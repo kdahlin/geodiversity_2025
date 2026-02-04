@@ -2,11 +2,12 @@
 #Written by: Leo Baldiga (borrowing some of Kyla's Code for data preparation)
 
 #load libraries
-library(corrplot)
 library(factoextra)
 library(Hmisc)
 library(plotly)
 library(dendextend)
+library(ggplot2)
+library(ggdendro)
 
 # make sure R displays enough digits (some metrics have very small values)
 options(digits = 10)
@@ -41,78 +42,34 @@ for (i in 2:length(rnames)) {
 row.names(in.data.t) <- rnames.new[,1]
 
 
-
 ### OPTIONAL - REMOVE HIGHLY CORRELATED VARIABLES AND WEIRD ONES
-remove.some <- c("Sa", "Sq", "s10z", "Sdq6", "Sph", "Svi", "Scl",
-                 "TRI", "TRIriley", "TRIrmsd", "Rough",
-                 "Std1", "TPIv2", "TRIv2", "srw_1", "scl_2")
+remove.metrics <- c("Sa", "Sq", "s10z", "Sdq6", "Sph", "Svi", "Scl1",
+                    "TRIv1", "TRIriley", "TRIrmsd", "rough",
+                    "Std1", "TPIv2", "TRIv2", "Srw1", "Scl2")
 
-check <- !(Metrics$func %in% remove.metrics)
-Metrics.sub <- filter(Metrics, check)
+remove.cols <- which(names(in.data.t) %in% remove.metrics)
 
-remove.cols <- which(names(in.data.1m) %in% remove.some)
+small.data.t <- in.data.t[,-c(remove.cols)]
 
-small.data.1m <- in.data.1m[,-c(remove.cols)]
+# get 1m data
+small.data.1m <- subset(small.data.t, res == "1m")
 
-# look at correlations
-cors <- cor(small.data.1m)
-# visualize with corrplot
-corrplot(cors, order = "FPC", method = "circle")
+#remove the res from the row names
+rownames(small.data.1m) <- gsub("_1m", "", rownames(small.data.1m))
 
 #transform all variables to a z-score
 small.data.1m.z <- as.data.frame(scale(small.data.1m))
 
-# look at correlations
-cors <- cor(small.data.1m.z)
-# visualize with corrplot (Should be no change)
-corrplot(cors, order = "FPC", method = "circle")
-
-# Variable Cluster Analyses -----
-
-#using spearmans rank and Hmisc::varclus
-vc_spearmans <- varclus(~ ., data = small.data.1m.z , similarity = "spearman") 
-
-#Plot dendrogram (axes show 1 - R^2 with own cluster)
-png(filename = "./results/varclus_spearmans_1m.png",
-    width = 12, height = 8, units = "in", res = 300)
-plot(vc_spearmans, main = "Hmisc::varclus variable clustering")
-dev.off()
-
-#Extract the hclust object and cut the tree to see clusters
-hc_spearmans <- vc_spearmans$hclust
-hc_spearmans
-
-clust_vc_spear <- cutree(hc_spearmans, k = 7)
-clusters_vc_spear <- split(names(clust_vc_spear), clust_vc_spear)
-clusters_vc_spear
-
-#Using pearson and Hmisc::varclus
-vc_pearson <- varclus(~ ., data = small.data.1m.z , similarity = "pearson")
-
-#Plot dendrogram (axes show 1 - R^2 with own cluster)
-png(filename = "./results/varclus_pearson_1m.png",
-    width = 12, height = 8, units = "in", res = 300)
-plot(vc_pearson, main = "Hmisc::varclus variable clustering (Pearson)")
-dev.off()
-
-#Extract the hclust object and cut the tree
-hc_pearson <- vc_pearson$hclust
-hc_pearson
-# Example: cut at height corresponding roughly to |r| >= 0.9
-# varclus uses 1 - R^2 as height, so R^2 = 0.9^2 = 0.81 -> height ~ 1 - 0.81 = 0.19
-clust_vc_pear <- cutree(hc_pearson, k = 7)
-clusters_vc_pear <- split(names(clust_vc_pear), clust_vc_pear)
-clusters_vc_pear
-
 # K-means clustering of sites ----
 set.seed(123) # for reproducibility
 png(filename = "./results/kmeans_screeplot_1_40_centers.png", 
-    width = 10, height = 8, units = "in", res = 300)
+    width = 6.5, height = 4, units = "in", res = 300)
 fviz_nbclust(small.data.1m.z, kmeans,
              method = "wss",     # elbow: total within‑cluster SS
              k.max = 40) +       # adjust upper bound as needed
   labs(title = "Scree plot of k-means within cluster sum of squares",
-       )
+       ) +
+  theme(axis.text.x = element_text(size = 8))
 dev.off()
 
 k_range <- 1:40  
@@ -129,7 +86,7 @@ var_explained_df<- data.frame(
 
 #it takes 20 clusters to explain 80% of the variance, 37 to explain 90%
 
-k_opt <- 11  # replace with chosen k from elbow - I chose 11 because there are 11 sites
+k_opt <- 6  # replace with chosen k from elbow
 kmeans_result <- kmeans(small.data.1m.z,
                         centers = k_opt,
                         iter.max = 100,
@@ -152,7 +109,7 @@ for (i in seq_along(variable_clusters_km)) {
 }
 
 #export to excel for table viewing
-write.csv(variable_clusters_km_df, "./results/kmeans_clusters_k11_table.csv",
+write.csv(variable_clusters_km_df, "./results/kmeans_clusters_k6_table.csv",
           row.names = FALSE)
 
 # Visualize k-means clustering results of Principal Components
@@ -202,7 +159,7 @@ dissimilarity <- dist(small.data.1m.z, method = "euclidean")
 hc_km <- hclust(dissimilarity, method = "ward.D2")
 
 # cut into k clusters and color branches
-k <- 11
+k <- 6
 dend <- as.dendrogram(hc_km)
 dend_col <- color_branches(dend, k = k) 
 #color labels to match branches
@@ -210,13 +167,53 @@ dend_col <- color_labels(dend_col, k = k)
 
 png("./results/hierarchical_clustering_1m_wardsD2_colored.png",
     width = 20, height = 10, units = "in", res = 300)
-plot(dend_col, main = "Ward's D minimum variance (k=11)",
-     xlab = "Sites", ylab = "Height")
+ggdendrogram(dend_col, rotate = TRUE)
+
+
+plot(dend_col, horiz = TRUE)
 dev.off()
 
 #get dendrogram clusters as a table
 hc_clusters <- cutree(hc_km, k = k)
 variable_clusters_hc <- split(names(hc_clusters), hc_clusters)
 variable_clusters_hc
+
+# Variable Cluster Analyses -----
+#using spearmans rank and Hmisc::varclus
+vc_spearmans <- varclus(~ ., data = small.data.1m.z , similarity = "spearman") 
+
+#Plot dendrogram (axes show 1 - R^2 with own cluster)
+png(filename = "./results/varclus_spearmans_1m.png",
+    width = 12, height = 8, units = "in", res = 300)
+plot(vc_spearmans, main = "Hmisc::varclus variable clustering")
+dev.off()
+
+#Extract the hclust object and cut the tree to see clusters
+hc_spearmans <- vc_spearmans$hclust
+hc_spearmans
+
+clust_vc_spear <- cutree(hc_spearmans, k = 7)
+clusters_vc_spear <- split(names(clust_vc_spear), clust_vc_spear)
+clusters_vc_spear
+
+#Using pearson and Hmisc::varclus
+vc_pearson <- varclus(~ ., data = small.data.1m.z , similarity = "pearson")
+
+#Plot dendrogram (axes show 1 - R^2 with own cluster)
+png(filename = "./results/varclus_pearson_1m.png",
+    width = 12, height = 8, units = "in", res = 300)
+plot(vc_pearson, main = "Hmisc::varclus variable clustering (Pearson)")
+dev.off()
+
+#Extract the hclust object and cut the tree
+hc_pearson <- vc_pearson$hclust
+hc_pearson
+# Example: cut at height corresponding roughly to |r| >= 0.9
+# varclus uses 1 - R^2 as height, so R^2 = 0.9^2 = 0.81 -> height ~ 1 - 0.81 = 0.19
+clust_vc_pear <- cutree(hc_pearson, k = 7)
+clusters_vc_pear <- split(names(clust_vc_pear), clust_vc_pear)
+clusters_vc_pear
+
+
 
 #END OF SCRIPT
