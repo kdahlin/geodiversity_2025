@@ -82,7 +82,7 @@ dev.off()
 
 remove.metrics <- c("Sa", "Sq", "s10z", "Sdq6", "Sph", "Svi", "Scl1",
                     "TRIv1", "TRIriley", "TRIrmsd", "rough",
-                    "Std1", "TPIv1", "TPIv1", "TRIv2", "srw_1", "Scl2")
+                    "Std1", "TPIv1", "TPIv1", "TRIv2", "srw1", "Scl2")
 
 check <- !(Metrics$func %in% remove.metrics)
 Metrics.sub <- filter(Metrics, check)
