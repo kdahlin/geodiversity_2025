@@ -40,36 +40,15 @@ for (i in 2:length(rnames)) {
 # attach the better names
 row.names(in.data.t) <- rnames.new[,1]
 
-################################################################################
-### data exploration at 1 m resolution 
 
-# get just 1m resolution
-in.data.1m <- subset(in.data.t, res == "1m")
-
-#remove the res from the row names
-rownames(in.data.1m) <- gsub("_1m", "", rownames(in.data.1m))
-
-# look at column variances (to remove columns with no variance)
-variances <- sapply(in.data.1m, var)
-
-# get the column names with no variance
-which.var <- which(variances == 0)
-
-# remove columns with no variance
-in.data.1m <- in.data.1m[,-(which.var)]
-
-# look at correlations
-cors <- cor(in.data.1m)
-
-#write.csv(cors, "./results/correlation_matrix_1m.csv", row.names = TRUE)
-
-# visualize with corrplot
-corrplot(cors, order = "FPC", method = "circle")
 
 ### OPTIONAL - REMOVE HIGHLY CORRELATED VARIABLES AND WEIRD ONES
-remove.some <- c("tri_1", "tpi_1", "sq_1", "sa_1", "s10z_1", "sdq6_1", "sph_1", 
-                 "svi_1", "scl_1", "TRI_1", "TRIriley_1", "TRIrmsd_1", 
-                 "roughness_1", "std_1")
+remove.some <- c("Sa", "Sq", "s10z", "Sdq6", "Sph", "Svi", "Scl",
+                 "TRI", "TRIriley", "TRIrmsd", "Rough",
+                 "Std1", "TPIv2", "TRIv2", "srw_1", "scl_2")
+
+check <- !(Metrics$func %in% remove.metrics)
+Metrics.sub <- filter(Metrics, check)
 
 remove.cols <- which(names(in.data.1m) %in% remove.some)
 
