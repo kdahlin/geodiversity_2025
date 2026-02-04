@@ -8,40 +8,85 @@ library(ggrepel)
 library(ggbeeswarm)
 library(egg)
 
-Metrics <- read_csv("./results/all_metrics_wide.csv") 
+Metrics <- read.csv("./results/all_metrics_wide.csv") 
 View(Metrics)
 
+# rename to match manuscript & store
+Metrics$func <- c("Sa", "Sq", "s10z", "Sdq", "Sdq6", "Sdr", "SBI", "SCI", "Ssk",
+                  "Sku", "Sds", "Sfd", "Srw1", "Srw2", "Srw3", "Std1", "Std2", 
+                  "Svi", "Stxr1", "Stxr2", "Ssc", "Sv", "Sph", "Sk", "Smean", 
+                  "Spk", "Svk", "Scl1", "Scl2", "Sdc","TPIv1", "TRIv1", "VRM", 
+                  "SAR", "rEnt", "Slope", "nor", "east", "TPIv2", "TRIv2", 
+                  "TRIriley", "TRIrmsd", "rough", "stdv", "MAD", "nmodes", 
+                  "range", "CuPro", "CuPl", "CuTot")
 
-remove.metrics <- c("sa_1", "sq_1", "s10z_1", "sdq6_1", "sph_1", "svi_1", "scl_1",
-                    "TRI_1", "TRIriley_1", "TRIrmsd_1", "roughness_1",
-                    "std_1", "TPI_1", "tri_1", "srw_1", "scl_2")
+write.csv(Metrics[,-1], "./results/all_metrics_wide.csv", row.names = Metrics$func)
+
+################################################################################
+### data exploration at 1 m resolution 
+in.data <- read.csv("./results/all_metrics_wide.csv", row.names = 1) 
+
+# transpose data so each row is a subsite and each column is a metric
+in.data.t <- as.data.frame(t(in.data))
+
+# get row names (now site x scene x resolution)
+samples <- rownames(in.data.t)
+
+# split out resolutions
+sample.res <- strsplit(samples, "[_\\.]")
+res <- unlist(lapply(sample.res, function(x) {x[9]}))
+
+# rename rows so they aren't so clunky
+rnames <- row.names(in.data.t)
+split.rnames <- strsplit(rnames, "_")
+
+rnames.new <- paste0(split.rnames[[1]][1], "_", split.rnames[[1]][6],
+                     "_", res[1])
+
+for (i in 2:length(rnames)) {
+  rnames.new <- rbind(rnames.new, 
+                      paste0(split.rnames[[i]][1], "_", split.rnames[[i]][6],
+                             "_", res[i]))
+}
+
+# attach the better names
+row.names(in.data.t) <- rnames.new[,1]
+
+# get just 1m resolution
+in.data.1m <- subset(in.data.t, res == "1m")
+
+#remove the res from the row names
+rownames(in.data.1m) <- gsub("_1m", "", rownames(in.data.1m))
+
+# look at column variances (to remove columns with no variance)
+variances <- sapply(in.data.1m, var)
+
+# get the column names with no variance
+which.var <- which(variances == 0)
+
+# remove columns with no variance
+in.data.1m <- in.data.1m[,-(which.var)]
+
+# look at correlations
+cors <- cor(in.data.1m)
+
+#write.csv(cors, "./results/correlation_matrix_1m.csv", row.names = TRUE)
+
+png(filename = "./results/correlation_matrix.png", 
+    width = 6, height = 6, units = "in", res = 300, bg = "white")
+# visualize with corrplot
+corrplot(cors, order = "FPC", method = "circle", tl.cex = 0.6)
+dev.off()
+
+########## Remove highly correlated ones ###########################
+
+
+remove.metrics <- c("Sa", "Sq", "s10z", "Sdq6", "Sph", "Svi", "Scl1",
+                    "TRIv1", "TRIriley", "TRIrmsd", "rough",
+                    "Std1", "TPIv1", "TPIv1", "TRIv2", "srw_1", "Scl2")
 
 check <- !(Metrics$func %in% remove.metrics)
 Metrics.sub <- filter(Metrics, check)
-
-# do some renaming
-
-i <- which(Metrics.sub$func == "srw_2")
-Metrics.sub$func[i] <- "srw2"
-
-i <- which(Metrics.sub$func == "srw_3")
-Metrics.sub$func[i] <- "srw3"
-
-i <- which(Metrics.sub$func == "curvature_profile_1")
-Metrics.sub$func[i] <- "Profile Curvature"
-
-i <- which(Metrics.sub$func == "curvature_planform_1")
-Metrics.sub$func[i] <- "Planform Curvature"
-
-i <- which(Metrics.sub$func == "curvature_total_1")
-Metrics.sub$func[i] <- "Total Curvature"
-
-i <- which(Metrics.sub$func == "stxr_1")
-Metrics.sub$func[i] <- "stxr1"
-
-i <- which(Metrics.sub$func == "stxr_2")
-Metrics.sub$func[i] <- "stxr2"
-
 
 #Pivot data to format for plotting
 Metrics_Long<- Metrics.sub %>%
