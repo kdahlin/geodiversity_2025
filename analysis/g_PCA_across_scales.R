@@ -49,30 +49,13 @@ row.names(in.data.t) <- rnames.new[,1]
 # get just 1m resolution
 in.data.1m <- subset(in.data.t, res == "1m")
 
-# look at column variances (to remove columns with no variance)
-variances <- sapply(in.data.1m, var)
-
-# get the column names with no variance
-which.var <- which(variances == 0)
-
-# remove columns with no variance
-in.data.1m <- in.data.1m[,-(which.var)]
-
-# look at correlations
-cors <- cor(in.data.1m, method = "spearman")
-
-write.csv(cors, "./sandbox/results/correlation_matrix_1m.csv", row.names = TRUE)
-
-# visualize with corrplot
-x11()
-corrplot(cors, order = "FPC", method = "circle", type = "lower")
 
 ### OPTIONAL - REMOVE HIGHLY CORRELATED VARIABLES AND WEIRD ONES
-remove.some <- c("tri_1", "tpi_1", "sq_1", "sa_1", "s10z_1", "sdq6_1", "sph_1", 
-                 "svi_1", "scl_1", "TRI_1", "TRIriley_1", "TRIrmsd_1", 
-                 "roughness_1", "std_1")
+remove.metrics <- c("Sa", "Sq", "s10z", "Sdq6", "Sph", "Svi", "Scl1",
+                    "TRIv1", "TRIriley", "TRIrmsd", "rough",
+                    "Std1", "TPIv2", "TRIv2", "Srw1", "Scl2")
 
-remove.cols <- which(names(in.data.1m) %in% remove.some)
+remove.cols <- which(names(in.data.1m) %in% remove.metrics)
 
 small.data.1m <- in.data.1m[,-c(remove.cols)]
 # look at correlations
@@ -84,7 +67,7 @@ corrplot(cors, order = "FPC", method = "circle")
 
 # now let's remove those columns from the entire data set (all resolutions) so
 # we can do PCA on each resolution
-remove.cols <- which(names(in.data.t) %in% remove.some)
+remove.cols <- which(names(in.data.t) %in% remove.metrics)
 in.data.small <- in.data.t[,-c(remove.cols)]
 
 # now let's loop through each resolution
@@ -102,8 +85,12 @@ for (i in 1:length(sizes)) {
   which.var <- which(variances == 0)
   which.na <- which(is.na(colSums(in.data)))
   
+  remove.vals <- c(which.var, which.na)
+  
+  if(length(remove.vals) > 0) {
   # remove columns with no variance
-  in.data <- in.data[,-c(which.var, which.na)]
+    in.data <- in.data[,-remove.vals]
+  }
 
   # do pca
   pca <- prcomp(in.data, center = TRUE, scale = TRUE)
@@ -120,7 +107,7 @@ for (i in 1:length(sizes)) {
 
   png(filename = paste0("./results/PCA/", "PCA_corrplot_", 
                         sizes[i], ".png"), width = 6.5, height = 5.5, units = "in",
-      res = 200)
+      res = 300)
   corrplot(pc.corrs, tl.cex = 0.6, title = paste(sizes[i], "Resolution"),
            mar = c(0.3,1,1.5,1))
   dev.off()
@@ -147,15 +134,4 @@ for (i in 1:length(sizes)) {
   print(paste("done with", i))
 }
 
-
-
-###### some data visualization steps to be used on an individual scale if wanted
-# look at variances
-x11()
-fviz_eig(pca, addlabels = TRUE)
-
-# biplot
-fviz_pca_biplot(pca, repel = TRUE,                 
-                col.var = "#2e9fdf", # Variables color
-                col.ind = "#696969")  # Individuals color
 
