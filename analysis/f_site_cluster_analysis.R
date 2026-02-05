@@ -94,66 +94,6 @@ kmeans_result <- kmeans(small.data.1m.z,
 #print results
 kmeans_result$centers
 
-# Assign variables to clusters based on highest loading
-variable_clusters_km <- split(names(kmeans_result$cluster), kmeans_result$cluster)
-variable_clusters_km
-
-#turn the variable clusters into a table for easier viewing
-max_cluster_size <- max(sapply(variable_clusters_km, length))
-variable_clusters_km_df <- as.data.frame(matrix(NA, nrow = max_cluster_size,
-                                                ncol = length(variable_clusters_km)))
-colnames(variable_clusters_km_df) <- paste0("Cluster_", seq_along(variable_clusters_km))
-for (i in seq_along(variable_clusters_km)) {
-  cluster_vars <- variable_clusters_km[[i]]
-  variable_clusters_km_df[1:length(cluster_vars), i] <- cluster_vars
-}
-
-#export to excel for table viewing
-write.csv(variable_clusters_km_df, "./results/kmeans_clusters_k6_table.csv",
-          row.names = FALSE)
-
-# Visualize k-means clustering results of Principal Components
-png(filename = "./results/kmeans_clustering_1m_PC1_2.png", width = 10, height = 8, units = "in", res = 300)
-fviz_cluster(kmeans_result, data = small.data.1m.z,
-             palette = "jco",
-             title = "K-means Clustering of sites (PC 1,2) (k=11, 100 iterations, 25 starts)",
-             ggtheme = theme_minimal())
-dev.off()
-
-png(filename = "./results/kmeans_clustering_1m_PC1_3.png", width = 10, height = 8, units = "in", res = 300)
-fviz_cluster(kmeans_result, data = small.data.1m.z,
-             palette = "jco",
-             title = "K-means Clustering of sites (PC 1,3) (k=11, 100 iterations, 25 starts)",
-             axes = c(1, 3),
-             ggtheme = theme_minimal())
-dev.off()
-
-png(filename = "./results/kmeans_clustering_1m_PC2_3.png", width = 10, height = 8, units = "in", res = 300)
-fviz_cluster(kmeans_result, data = small.data.1m.z,
-             palette = "jco",
-             title = "K-means Clustering of sites (PC 2,3) (k=11, 100 iterations, 25 starts)",
-             axes = c(2, 3),
-             ggtheme = theme_minimal())
-dev.off()
-
-# PCA on the same data used for k-means
-pca_res <- prcomp(small.data.1m.z, scale. = FALSE)
-
-# First 3 PCs as a data frame
-pc_scores <- as.data.frame(pca_res$x[, 1:3])
-colnames(pc_scores) <- c("PC1", "PC2", "PC3")
-
-# Add cluster labels from k-means
-pc_scores$cluster <- factor(kmeans_result$cluster)
-
-plot_ly(pc_scores,
-        x = ~PC1, y = ~PC2, z = ~PC3,
-        color = ~cluster,
-        stroke = "Set3",
-        type = "scatter3d",
-        mode = "markers") %>%
-  layout(title = "K-means (k=11) clusters on first 3 principal components")
-
 # Ward's D minimum variance hierarchical clustering ----
 dissimilarity <- dist(small.data.1m.z, method = "euclidean")
 hc_km <- hclust(dissimilarity, method = "ward.D2")
@@ -171,48 +111,6 @@ png("./results/hierarchical_clustering_1m_wards_colored.png",
   plot(rev(dend_col), horiz = TRUE, cex.axis = 1.5, 
        cex.lab = 2, xlab = "distance")
 dev.off()
-
-#get dendrogram clusters as a table
-hc_clusters <- cutree(hc_km, k = k)
-variable_clusters_hc <- split(names(hc_clusters), hc_clusters)
-variable_clusters_hc
-
-# Variable Cluster Analyses -----
-#using spearmans rank and Hmisc::varclus
-vc_spearmans <- varclus(~ ., data = small.data.1m.z , similarity = "spearman") 
-
-#Plot dendrogram (axes show 1 - R^2 with own cluster)
-png(filename = "./results/varclus_spearmans_1m.png",
-    width = 12, height = 8, units = "in", res = 300)
-plot(vc_spearmans, main = "Hmisc::varclus variable clustering")
-dev.off()
-
-#Extract the hclust object and cut the tree to see clusters
-hc_spearmans <- vc_spearmans$hclust
-hc_spearmans
-
-clust_vc_spear <- cutree(hc_spearmans, k = 7)
-clusters_vc_spear <- split(names(clust_vc_spear), clust_vc_spear)
-clusters_vc_spear
-
-#Using pearson and Hmisc::varclus
-vc_pearson <- varclus(~ ., data = small.data.1m.z , similarity = "pearson")
-
-#Plot dendrogram (axes show 1 - R^2 with own cluster)
-png(filename = "./results/varclus_pearson_1m.png",
-    width = 12, height = 8, units = "in", res = 300)
-plot(vc_pearson, main = "Hmisc::varclus variable clustering (Pearson)")
-dev.off()
-
-#Extract the hclust object and cut the tree
-hc_pearson <- vc_pearson$hclust
-hc_pearson
-# Example: cut at height corresponding roughly to |r| >= 0.9
-# varclus uses 1 - R^2 as height, so R^2 = 0.9^2 = 0.81 -> height ~ 1 - 0.81 = 0.19
-clust_vc_pear <- cutree(hc_pearson, k = 7)
-clusters_vc_pear <- split(names(clust_vc_pear), clust_vc_pear)
-clusters_vc_pear
-
 
 
 #END OF SCRIPT
