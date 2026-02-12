@@ -99,7 +99,7 @@ dissimilarity <- dist(small.data.1m.z, method = "euclidean")
 hc_km <- hclust(dissimilarity, method = "ward.D2")
 
 # cut into k clusters and color branches
-k <- 7
+k <- 6
 dend <- as.dendrogram(hc_km)
 dend_col <- color_branches(dend, k = k) 
 #color labels to match branches
@@ -107,7 +107,7 @@ dend_col <- color_labels(dend_col, k = k)
 
 png("./results/hierarchical_clustering_1m_wards_colored.png",
     width = 5, height = 9, units = "in", res = 300)
-  par(cex = 0.5, mar = c(4.5,1,0,3))
+  par(cex = 0.5, mar = c(5.3,1,0,3))
   plot(rev(dend_col), horiz = TRUE, cex.axis = 1.5, 
        cex.lab = 2, xlab = "distance")
 dev.off()
