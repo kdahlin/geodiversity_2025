@@ -8,8 +8,8 @@ library(ggrepel)
 library(ggbeeswarm)
 library(egg)
 
-Metrics <- read.csv("./results/all_metrics_wide.csv") 
-View(Metrics)
+Metrics.wide <- read.csv("./results/all_metrics_wide.csv") 
+Metrics.long <- read.csv("./results/all_metrics_long.csv") 
 
 # rename to match manuscript & store
 Metrics$func <- c("Sa", "Sq", "s10z", "Sdq", "Sdq6", "Sdr", "SBI", "SCI", "Ssk",
