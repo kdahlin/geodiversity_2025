@@ -20,8 +20,8 @@ library(spatialEco)
 
 ### ONLY MODIFY THE FOLLOWING SECTION AS NEEDED ### ------
 
-#Set a working directory
-setwd("/Users/leobaldiga/Documents/GitHub/geodiversity_2025/") 
+#Set a working directory - don't need this in an Rproj
+# setwd("/Users/leobaldiga/Documents/GitHub/geodiversity_2025/") 
 #Change this to the location of your own geodiv folder
 
 #Define NEON site location codes (processed_tifs/subdirectory names)
