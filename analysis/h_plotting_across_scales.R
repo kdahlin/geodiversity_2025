@@ -1,6 +1,5 @@
 #Script to plot metrics against increasing scale
 library(ggplot2)
-library(openxlsx2)
 library(stringr) #Allows python-style string formatting
 library(dplyr)
 
@@ -25,7 +24,7 @@ for (i in 1:length(names)) {
 
 remove.metrics <- c("Sa", "Sq", "s10z", "Sdq6", "Sph", "Svi", "Scl1",
                     "TRIv1", "TRIriley", "TRIrmsd", "rough",
-                    "Std1", "TPIv1", "TPIv1", "TRIv2", "srw1", "Scl2")
+                    "Std1", "TPIv1", "TPIv1", "TRIv2", "Srw1", "Scl2")
 
 check <- !(in.data$func %in% remove.metrics)
 Metrics.sub <- filter(in.data, check)
@@ -33,26 +32,62 @@ Metrics.sub <- filter(in.data, check)
 
 grouped.data <- Metrics.sub %>% group_by(func, site, res) %>% 
   summarise(mean = mean(value, na.rm = TRUE)) %>%
-  mutate(res = as.numeric(res))
+  mutate(res = as.numeric(res),
+         metrics = factor(func,
+                          levels = c("range", "Smean", "Svk", "Spk", "MAD",
+                                     "Slope", "nor", "east", "Sdq", "Sdr", "Sar",
+                                     "SBI", "SCI", "Ssk", "Sku", "Sds", "Sv",
+                                     "Sdc", "nmodes", "Ssc", "CuPro", "CuPl",
+                                     "CuTot", "Sk", "stdv", "VRM", "TPI", "Sfd", 
+                                     "Srw2", "Srw3", "rEnt", "Std", "Stxr1", 
+                                     "Stxr2")
+         ))
 
 #Massive plot of all metrics
+x <- ggplot(Metrics_LongRes_all, aes(x = raster_id, y = value, color = raster_id, shape = Tile)) +
+  geom_beeswarm(size=1) +
+  facet_wrap(~ metrics, scales = "free_y", ncol=4) +  # metrics by type
+  theme_bw() +
+  scale_color_manual(values = c("CPER" = "#a6cee3", "OAES" = "#a6cee3", "CLBJ" = "#a6cee3", 
+                                "ORNL" = "#b2df8a", "MLBS" = "#b2df8a", 
+                                "RMNP"="#33a02c", "TEAK"="#33a02c", "WREF"="#33a02c", 
+                                "WOOD"="#1f78b4", "OSBS"="#1f78b4", "UNDE"="#1f78b4"), guide="none") +
+  scale_shape_manual(name = "Scene",
+                     values = c("1" = 1, "2" = 2, "3" = 0, "4" = 5, "5" = 16, 
+                                "6" = 17, "7" = 18, "8" = 15, "9" = 4))+
+  labs(x = "", y = "", title = "") +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 6),
+    axis.text.y = element_text(size = 5)
+  ) +
+  theme(legend.position = "none")
+
+tag_facet(x, tag_pool = c(letters, LETTERS), size = 3)
+
+ggsave("./results/all_metrics_beewarm.png", width = 6.5 , height = 8 , units = "in", 
+       dpi = 300)
+
+
 ggplot(grouped.data, aes(x = res, y = mean, color = site, group=site)) +
   geom_point() +
   geom_line() +
   #geom_errorbar(aes(x = res, ymin = min, ymax = max), width = .2)+
-  facet_wrap(~ func, scales = "free_y") +
+  facet_wrap(~ func, scales = "free_y", ncol = 4) +
   scale_x_continuous(breaks = sort(unique(grouped.data$res)))+
   theme_bw() +
-  scale_color_manual(values = c("CPER" = "aquamarine4", "OAES" = "aquamarine4", "CLBJ" = "aquamarine4", 
-                                "ORNL" = "royalblue4", "MLBS" = "royalblue4", 
-                                "RMNP"="purple3", "TEAK"="purple3", "WREF"="purple3", 
-                                "WOOD"="darkorange3", "OSBS"="darkorange3", "UNDE"="darkorange3"))+
-  labs(x = "", y = "", title = "Mean change over resolutions") +
-  theme(title = element_text(size=20),
-        legend.text = element_text(size=15),
-        legend.title = element_text(size=20),
-        axis.text = element_text(size = 15),
-        strip.text = element_text(size = 20))
+  scale_color_manual(values = c("CPER" = "#a6cee3", "OAES" = "#a6cee3", "CLBJ" = "#a6cee3", 
+                                "ORNL" = "#b2df8a", "MLBS" = "#b2df8a", 
+                                "RMNP"="#33a02c", "TEAK"="#33a02c", "WREF"="#33a02c", 
+                                "WOOD"="#1f78b4", "OSBS"="#1f78b4", "UNDE"="#1f78b4"))+
+  labs(x = "", y = "", title = "") +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 6),
+    axis.text.y = element_text(size = 5)
+  ) +
+  theme(legend.position = "bottom", 
+        legend.key.height = unit(0.1, "in"))
+ggsave("./results/all_metrics_resolution.png", width = 6.5 , height = 9.5, 
+       units = "in", dpi = 300)
 
 
 # split out scene names
