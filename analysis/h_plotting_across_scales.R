@@ -7,6 +7,54 @@ library(dplyr)
 # read in the long data
 in.data <- read.csv("./results/all_metrics_long.csv")
 
+# rename functions so they are pretty
+
+old.names <- unique(in.data$func)
+
+names <- c("Sa", "Sq", "s10z", "Sdq", "Sdq6", "Sdr", "SBI", "SCI", "Ssk",
+  "Sku", "Sds", "Sfd", "Srw1", "Srw2", "Srw3", "Std1", "Std2", 
+  "Svi", "Stxr1", "Stxr2", "Ssc", "Sv", "Sph", "Sk", "Smean", 
+  "Spk", "Svk", "Scl1", "Scl2", "Sdc","TPIv1", "TRIv1", "VRM", 
+  "SAR", "rEnt", "Slope", "nor", "east", "TPIv2", "TRIv2", 
+  "TRIriley", "TRIrmsd", "rough", "stdv", "MAD", "nmodes", 
+  "range", "CuPro", "CuPl", "CuTot")
+
+for (i in 1:length(names)) {
+  in.data$func[in.data$func == old.names[i]] <- names[i]
+}
+
+remove.metrics <- c("Sa", "Sq", "s10z", "Sdq6", "Sph", "Svi", "Scl1",
+                    "TRIv1", "TRIriley", "TRIrmsd", "rough",
+                    "Std1", "TPIv1", "TPIv1", "TRIv2", "srw1", "Scl2")
+
+check <- !(in.data$func %in% remove.metrics)
+Metrics.sub <- filter(in.data, check)
+
+
+grouped.data <- Metrics.sub %>% group_by(func, site, res) %>% 
+  summarise(mean = mean(value, na.rm = TRUE)) %>%
+  mutate(res = as.numeric(res))
+
+#Massive plot of all metrics
+ggplot(grouped.data, aes(x = res, y = mean, color = site, group=site)) +
+  geom_point() +
+  geom_line() +
+  #geom_errorbar(aes(x = res, ymin = min, ymax = max), width = .2)+
+  facet_wrap(~ func, scales = "free_y") +
+  scale_x_continuous(breaks = sort(unique(grouped.data$res)))+
+  theme_bw() +
+  scale_color_manual(values = c("CPER" = "aquamarine4", "OAES" = "aquamarine4", "CLBJ" = "aquamarine4", 
+                                "ORNL" = "royalblue4", "MLBS" = "royalblue4", 
+                                "RMNP"="purple3", "TEAK"="purple3", "WREF"="purple3", 
+                                "WOOD"="darkorange3", "OSBS"="darkorange3", "UNDE"="darkorange3"))+
+  labs(x = "", y = "", title = "Mean change over resolutions") +
+  theme(title = element_text(size=20),
+        legend.text = element_text(size=15),
+        legend.title = element_text(size=20),
+        axis.text = element_text(size = 15),
+        strip.text = element_text(size = 20))
+
+
 # split out scene names
 files <- in.data$file
 parts <- strsplit(files, "[_\\.]")
