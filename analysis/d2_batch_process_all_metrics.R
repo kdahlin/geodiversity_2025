@@ -277,8 +277,10 @@ if (.Platform$OS.type == "windows") {
   cl <- makePSOCKcluster(num_cores)
   clusterExport(cl, c("tifs", "compute_moments"))
   clusterEvalQ(cl, {
+    # you don't actually need the moments package I don't think
     library(terra)
     library(moments)
+    library(spatialEco)
   })
   
   moments_results <- parLapply(cl, tifs, function(file) {
@@ -289,6 +291,7 @@ if (.Platform$OS.type == "windows") {
   moments_results <- mclapply(tifs, function(file) {
     library(terra)
     library(moments)
+    library(spatialEco)
     compute_moments(file)
   }, mc.cores = num_cores)
 }
