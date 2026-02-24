@@ -15,7 +15,7 @@ library(FactoMineR)
 options(digits = 10)
 
 # read in the wide data
-in.data <- read.csv("./results/all_metrics_wide.csv", row.names = 1)
+in.data <- read.csv("./results/all_metrics_wide_clean.csv", row.names = 1)
 
 # transpose data so each row is a subsite and each column is a metric
 in.data.t <- as.data.frame(t(in.data))
@@ -51,7 +51,7 @@ in.data.1m <- subset(in.data.t, res == "1m")
 
 
 ### OPTIONAL - REMOVE HIGHLY CORRELATED VARIABLES AND WEIRD ONES
-remove.metrics <- c("Sa", "Sq", "s10z", "Sdq6", "Sph", "Svi", "Scl1",
+remove.metrics <- c("Sa", "Sq", "s10z", "Sdq6", "Sph", "Svi", "Sv", "Scl1",
                     "TRIv1", "TRIriley", "TRIrmsd", "rough",
                     "Std1", "TPIv2", "TRIv2", "Srw1", "Scl2")
 
@@ -71,6 +71,7 @@ remove.cols <- which(names(in.data.t) %in% remove.metrics)
 in.data.small <- in.data.t[,-c(remove.cols)]
 
 # now let's loop through each resolution
+# don't forget to make a "PCA" folder in your results directory!
 ################################################################################
 sizes <- unique(res)
 
