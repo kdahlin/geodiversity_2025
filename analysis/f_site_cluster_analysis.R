@@ -13,7 +13,7 @@ library(ggdendro)
 options(digits = 10)
 
 # read in the wide data
-in.data <- read.csv("./results/all_metrics_wide.csv", row.names = 1)
+in.data <- read.csv("./results/all_metrics_wide_clean.csv", row.names = 1)
 
 # transpose data so each row is a subsite and each column is a metric
 in.data.t <- as.data.frame(t(in.data))
@@ -43,7 +43,7 @@ row.names(in.data.t) <- rnames.new[,1]
 
 
 ### OPTIONAL - REMOVE HIGHLY CORRELATED VARIABLES AND WEIRD ONES
-remove.metrics <- c("Sa", "Sq", "s10z", "Sdq6", "Sph", "Svi", "Scl1",
+remove.metrics <- c("Sa", "Sq", "s10z", "Sdq6", "Sph", "Svi", "Sv", "Scl1",
                     "TRIv1", "TRIriley", "TRIrmsd", "rough",
                     "Std1", "TPIv2", "TRIv2", "Srw1", "Scl2")
 
@@ -84,7 +84,7 @@ var_explained_df<- data.frame(
   pct_explained = sprintf("%.2f", 100 * var_explained)     # e.g. 87.34
 )
 
-#it takes 20 clusters to explain 80% of the variance, 37 to explain 90%
+#it takes 19 clusters to explain 80% of the variance, 35 to explain 90%
 
 k_opt <- 6  # replace with chosen k from elbow
 kmeans_result <- kmeans(small.data.1m.z,
