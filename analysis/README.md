@@ -1,1 +1,1 @@
-This directory is for actual analysis scripts that will probably go into the final project. Try to name in order with "letter_" (like a_ is the first one)
+Scripts for downloading, processing, and analyzing data in the submitted manuscript titled "Disentangling Continuous Surface Heterogeneity: Evaluating Gradient Surface Metrics Across Landscape Types and Spatial Scales"
